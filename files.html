@@ -1,0 +1,344 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Course Files & PDFs — Student Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-[#F8FAFC] text-[#0F172A] font-sans min-h-screen flex">
+    <!-- Sidebar Container -->
+    <aside
+      id="sidebarContainer"
+      class="hidden md:flex flex-col shrink-0 h-screen sticky top-0"
+    ></aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto">
+    <!-- Mobile burger button (shown only on mobile) -->
+    <div class="md:hidden sticky top-0 z-30 bg-white border-b border-[#E2E8F0] px-4 py-3 flex items-center gap-3 shadow-sm">
+      <button
+        onclick="if(typeof openMobileSidebar==='function')openMobileSidebar();"
+        class="p-2 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[#0F172A] hover:bg-slate-100 transition-colors flex-shrink-0"
+        aria-label="Open menu"
+      >
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <span class="font-bold text-[#0F172A] text-base tracking-tight" style="font-family:'Urbanist',sans-serif;">MyPortal</span>
+    </div>
+      <div class="p-6 md:p-10">
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
+      >
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-[#0F172A]">
+            Course Files & PDFs
+          </h1>
+          <p class="text-sm text-[#64748B]">
+            Explore and download your course reference documents and notes by
+            chapter.
+          </p>
+        </div>
+      </div>
+
+      <!-- Filters and Search Bar -->
+      <div
+        class="bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-6 shadow-sm mb-8 flex flex-col md:flex-row items-center justify-between gap-4"
+      >
+        <div class="relative w-full md:w-96">
+          <svg
+            class="absolute left-3.5 top-3.5 w-4 h-4 text-[#64748B]"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          <input
+            type="text"
+            id="searchInput"
+            oninput="filterFiles()"
+            placeholder="Search files by title or description..."
+            class="w-full pl-10 pr-4 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488] text-[#0F172A]"
+          />
+        </div>
+        <div
+          class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end"
+        >
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <label
+              class="text-xs font-semibold text-[#64748B] uppercase tracking-wider"
+              >Sort:</label
+            >
+            <div class="relative flex-1 sm:flex-none">
+              <select
+                id="sortSelect"
+                onchange="filterFiles()"
+                class="w-full appearance-none pl-3 pr-9 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm font-medium text-[#0F172A] focus:outline-none focus:border-[#0D9488] hover:border-[#0D9488] transition-colors cursor-pointer"
+              >
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="title">Title (A-Z)</option>
+              </select>
+              <div
+                class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#64748B]"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chapters Accordion Container -->
+      <div id="chaptersContainer" class="space-y-4">
+        <!-- Populated dynamically -->
+      </div>
+      </div>
+    </main>
+
+    <script>
+      let allFiles = [];
+      let allChapters = [];
+      // Keep track of open/closed state for each chapter ID. Default to open (true).
+      const openChapters = {};
+
+      // Check authentication
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (!user.full_name) {
+        window.location.href = "index.html";
+      } else {
+        init();
+      }
+
+      // Load Sidebar component dynamically and initialize active state
+      fetch("sidebar.html")
+        .then((res) => res.text())
+        .then((html) => {
+          const container = document.getElementById("sidebarContainer");
+          container.innerHTML = html;
+          const scripts = container.querySelectorAll("script");
+          scripts.forEach((script) => {
+            const newScript = document.createElement("script");
+            newScript.textContent = script.textContent;
+            document.body.appendChild(newScript);
+          });
+          if (typeof renderSidebar === "function") {
+            renderSidebar("Files");
+          }
+        });
+
+      async function init() {
+        const container = document.getElementById("chaptersContainer");
+        container.innerHTML = `
+          <div class="py-20 flex flex-col items-center justify-center gap-3">
+            <div class="w-8 h-8 border-4 border-[#0D9488] border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-sm font-medium text-[#64748B]">Loading chapters and files...</p>
+          </div>
+        `;
+
+        try {
+          const [chaptersRes, filesRes] = await Promise.all([
+            fetch("/api/chapters"),
+            fetch("/api/files"),
+          ]);
+          allChapters = await chaptersRes.json();
+          allFiles = await filesRes.json();
+
+          // Initialize all chapters as open by default
+          allChapters.forEach((c) => {
+            if (openChapters[c.id] === undefined) {
+              openChapters[c.id] = true;
+            }
+          });
+
+          filterFiles();
+        } catch (err) {
+          console.error("Failed to load data", err);
+          container.innerHTML = `
+            <div class="p-12 text-center bg-white border border-[#E2E8F0] rounded-2xl text-[#B91C1C]">
+              Failed to load course materials. Please refresh the page.
+            </div>
+          `;
+        }
+      }
+
+      function toggleChapter(chapterId) {
+        openChapters[chapterId] = !openChapters[chapterId];
+        filterFiles();
+      }
+
+      function filterFiles() {
+        const query = document
+          .getElementById("searchInput")
+          .value.toLowerCase();
+        const sortBy = document.getElementById("sortSelect").value;
+
+        // Filter files based on search query
+        let filteredFiles = allFiles.filter((f) => {
+          return (
+            f.title.toLowerCase().includes(query) ||
+            (f.description && f.description.toLowerCase().includes(query))
+          );
+        });
+
+        // Sort files
+        filteredFiles.sort((a, b) => {
+          if (sortBy === "newest") {
+            return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+          } else if (sortBy === "oldest") {
+            return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+          } else if (sortBy === "title") {
+            return a.title.localeCompare(b.title);
+          }
+        });
+
+        renderChaptersAccordion(filteredFiles);
+      }
+
+      function renderChaptersAccordion(files) {
+        const container = document.getElementById("chaptersContainer");
+        container.innerHTML = "";
+
+        if (allChapters.length === 0) {
+          container.innerHTML = `
+            <div class="bg-white border border-[#E2E8F0] rounded-2xl p-12 text-center shadow-sm">
+              <p class="text-sm font-medium text-[#64748B]">No chapters available.</p>
+            </div>
+          `;
+          return;
+        }
+
+        allChapters.forEach((chapter) => {
+          // Find files belonging to this chapter
+          const chapterFiles = files.filter((f) => {
+            return f.chapters && f.chapters.some((c) => c.id === chapter.id);
+          });
+
+          const isOpen = openChapters[chapter.id];
+          const chevronClass = isOpen ? "rotate-180" : "";
+          const contentClass = isOpen ? "block" : "hidden";
+
+          let html = `
+            <div class="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm overflow-hidden transition-all">
+              <!-- Chapter Header -->
+              <button 
+                onclick="toggleChapter(${chapter.id})"
+                class="w-full px-6 py-4 flex items-center justify-between bg-white hover:bg-slate-50 transition-colors text-left"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-[#0D9488]/10 text-[#0D9488] flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 class="text-xl font-normal text-[#0F172A] tracking-tight">${chapter.title}</h2>
+                    <p class="text-xs text-[#64748B]">${chapterFiles.length} file${chapterFiles.length === 1 ? "" : "s"} available</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="text-xs font-semibold px-2.5 py-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-[#64748B]">
+                    ${chapterFiles.length} item${chapterFiles.length === 1 ? "" : "s"}
+                  </span>
+                  <svg class="w-5 h-5 text-[#64748B] transition-transform duration-200 ${chevronClass}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                  </svg>
+                </div>
+              </button>
+
+              <!-- Chapter Content / Dropdown Grid -->
+              <div class="${contentClass} px-6 pb-6 pt-2 border-t border-[#E2E8F0] bg-[#F8FAFC]/50">
+          `;
+
+          if (chapterFiles.length === 0) {
+            html += `
+              <div class="py-8 text-center text-sm text-[#64748B]">
+                No materials uploaded yet for this chapter.
+              </div>
+            `;
+          } else {
+            html += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">`;
+
+            chapterFiles.forEach((f) => {
+              const formattedDate = f.created_at
+                ? new Date(f.created_at).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })
+                : "";
+
+              const chaptersBadges =
+                f.chapters && f.chapters.length > 0
+                  ? f.chapters
+                      .map(
+                        (c) =>
+                          `<span class="text-xs font-semibold text-[#047857] bg-[#ECFDF5] px-2.5 py-0.5 rounded-md inline-block mr-1 mb-1">${c.title}</span>`,
+                      )
+                      .join("")
+                  : '<span class="text-xs text-[#64748B]">No chapters</span>';
+
+              html += `
+                <div class="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-6 group">
+                  <!-- Top Section: Icon & Title -->
+                  <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-[#0D9488]/10 text-[#0D9488] flex items-center justify-center flex-shrink-0 group-hover:bg-[#0D9488] group-hover:text-white transition-colors">
+                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                      </svg>
+                    </div>
+                    <div class="overflow-hidden flex-1">
+                      <div class="mb-1 flex flex-wrap gap-1">${chaptersBadges}</div>
+                      <h3 class="font-bold text-[#0F172A] text-base leading-snug truncate">${f.title}</h3>
+                      <p class="text-xs text-[#64748B] mt-1 line-clamp-2">${f.description || "No description provided."}</p>
+                    </div>
+                  </div>
+
+                  <!-- Action Button -->
+                  <div class="pt-4 border-t border-[#E2E8F0] flex items-center justify-between">
+                    <span class="text-xs text-[#64748B]">${formattedDate ? "Added " + formattedDate : ""}</span>
+                    <a href="${f.file_path}" target="_blank" class="px-4 py-2.5 bg-[#0D9488] hover:bg-[#0b7a70] text-white font-semibold rounded-xl text-sm transition-colors flex items-center gap-2 shadow-sm">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                      </svg>
+                      Open File
+                    </a>
+                  </div>
+                </div>
+              `;
+            });
+
+            html += `</div>`;
+          }
+
+          html += `
+              </div>
+            </div>
+          `;
+
+          container.innerHTML += html;
+        });
+      }
+    </script>
+  </body>
+</html>

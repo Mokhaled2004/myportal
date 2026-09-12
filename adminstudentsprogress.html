@@ -1,0 +1,1922 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Students Progress — Admin Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for analytics visuals -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <!-- jsPDF + AutoTable: native vector PDF generation (charts embedded as images, tables auto-paginated).
+         This replaces html2pdf.js, which produced cropped charts when content spanned page breaks. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family:
+          "Inter",
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      canvas {
+        max-width: 100%;
+      }
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 8px;
+      }
+      .chart-empty-state {
+        display: none;
+      }
+      .chart-card.is-empty .chart-canvas-wrap {
+        display: none;
+      }
+      .chart-card.is-empty .chart-empty-state {
+        display: flex;
+      }
+    </style>
+  </head>
+  <body class="bg-[#F8FAFC] text-[#0F172A] min-h-screen flex">
+    <!-- Sidebar Container -->
+    <aside
+      id="sidebarContainer"
+      class="hidden md:flex flex-col shrink-0 h-screen sticky top-0"
+    ></aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto">    <!-- Mobile burger button (shown only on mobile) -->
+    <div class="md:hidden sticky top-0 z-30 bg-white border-b border-[#E2E8F0] px-4 py-3 flex items-center gap-3 shadow-sm">
+      <button
+        onclick="if(typeof openMobileSidebar==='function')openMobileSidebar();"
+        class="p-2 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[#0F172A] hover:bg-slate-100 transition-colors flex-shrink-0"
+        aria-label="Open menu"
+      >
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <span class="font-bold text-[#0F172A] text-base tracking-tight" style="font-family:'Urbanist',sans-serif;">MyPortal</span>
+    </div>      <div class="p-6 md:p-10">
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6"
+      >
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-[#0F172A]">
+            Students Progress Overview
+          </h1>
+          <p class="text-sm text-[#64748B]">
+            Monitor comprehensive student engagement, attendance, homework
+            submissions, exam grades, and progressive analytics.
+          </p>
+        </div>
+      </div>
+
+      <!-- VIEW 1: Students List & Search -->
+      <div id="studentListView" class="space-y-6">
+        <!-- Search & Filter Bar -->
+        <div
+          class="bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4"
+        >
+          <div class="relative w-full md:w-96">
+            <svg
+              class="absolute left-3.5 top-3.5 w-4 h-4 text-[#64748B]"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <input
+              type="text"
+              id="searchInput"
+              oninput="filterStudents()"
+              placeholder="Search students by name or school..."
+              class="w-full pl-10 pr-4 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488] text-[#0F172A]"
+            />
+          </div>
+          <span
+            id="studentCountBadge"
+            class="text-xs font-semibold text-[#64748B] bg-[#F8FAFC] border border-[#E2E8F0] px-3 py-2 rounded-xl whitespace-nowrap"
+            >0 students</span
+          >
+        </div>
+
+        <!-- Students Table Container -->
+        <div
+          class="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm overflow-hidden"
+        >
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead
+                class="bg-[#F8FAFC] text-[#64748B] uppercase text-xs border-b border-[#E2E8F0]"
+              >
+                <tr>
+                  <th class="px-6 py-4 font-semibold">Student Name</th>
+                  <th class="px-6 py-4 font-semibold">School</th>
+                  <th class="px-6 py-4 font-semibold text-center">
+                    Attendance
+                  </th>
+                  <th class="px-6 py-4 font-semibold text-center">Homeworks</th>
+                  <th class="px-6 py-4 font-semibold text-center">
+                    Exams Graded
+                  </th>
+                  <th class="px-6 py-4 font-semibold text-center">
+                    Pastpapers
+                  </th>
+                  <th class="px-6 py-4 font-semibold text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="studentsTableBody" class="divide-y divide-[#E2E8F0]">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: Selected Student Details & Charts (Main Page View) -->
+      <div id="studentDetailView" class="space-y-6 hidden">
+        <!-- Back Button & Header Actions -->
+        <div
+          class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm"
+        >
+          <div class="flex items-center gap-4">
+            <button
+              onclick="backToList()"
+              class="w-10 h-10 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] hover:bg-slate-100 transition-all font-bold"
+              title="Back to Students List"
+            >
+              ←
+            </button>
+            <div>
+              <h2 id="mainStudentName" class="text-xl font-bold text-[#0F172A]">
+                Student Name
+              </h2>
+              <p id="mainStudentSchool" class="text-xs text-[#64748B]">
+                School name
+              </p>
+            </div>
+          </div>
+          <button
+            id="exportPdfBtn"
+            onclick="exportStudentPDF()"
+            class="px-4 py-2.5 bg-[#0D9488] hover:bg-[#0b7a6e] text-white rounded-xl text-xs font-semibold shadow-sm transition-all flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H8a2 2 0 01-2-2V5a2 2 0 012-2h6l6 6v10a2 2 0 01-2 2z"
+              />
+            </svg>
+            Download Full PDF Report
+          </button>
+        </div>
+
+        <!-- Navigation Tabs on Main Page -->
+        <div
+          class="flex border-b border-[#E2E8F0] px-6 gap-6 bg-white rounded-2xl border shadow-sm overflow-x-auto"
+        >
+          <button
+            onclick="switchTab('analytics')"
+            id="tab_btn_analytics"
+            class="py-4 text-xs font-bold border-b-2 border-[#0D9488] text-[#0D9488] transition-all whitespace-nowrap flex items-center gap-1.5"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
+            </svg>
+            Analytics & Charts
+          </button>
+          <button
+            onclick="switchTab('exams')"
+            id="tab_btn_exams"
+            class="py-4 text-xs font-bold border-b-2 border-transparent text-[#64748B] hover:text-[#0F172A] transition-all whitespace-nowrap flex items-center gap-1.5"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+              />
+            </svg>
+            Exams & Grades Table
+          </button>
+          <button
+            onclick="switchTab('attendance')"
+            id="tab_btn_attendance"
+            class="py-4 text-xs font-bold border-b-2 border-transparent text-[#64748B] hover:text-[#0F172A] transition-all whitespace-nowrap flex items-center gap-1.5"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            Attendance
+          </button>
+          <button
+            onclick="switchTab('homeworks')"
+            id="tab_btn_homeworks"
+            class="py-4 text-xs font-bold border-b-2 border-transparent text-[#64748B] hover:text-[#0F172A] transition-all whitespace-nowrap flex items-center gap-1.5"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+              />
+            </svg>
+            Homeworks
+          </button>
+          <button
+            onclick="switchTab('pastpapers')"
+            id="tab_btn_pastpapers"
+            class="py-4 text-xs font-bold border-b-2 border-transparent text-[#64748B] hover:text-[#0F172A] transition-all whitespace-nowrap flex items-center gap-1.5"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+              />
+            </svg>
+            Pastpapers
+          </button>
+        </div>
+
+        <!-- Loading Spinner for Student Details -->
+        <div
+          id="loadingDetails"
+          class="py-16 flex justify-center items-center bg-white rounded-2xl border border-[#E2E8F0] shadow-sm hidden"
+        >
+          <div class="flex flex-col items-center gap-2">
+            <div
+              class="w-8 h-8 border-4 border-[#0D9488] border-t-transparent rounded-full animate-spin"
+            ></div>
+            <span class="text-xs text-[#64748B] font-medium"
+              >Loading student records & analytics...</span
+            >
+          </div>
+        </div>
+
+        <!-- Tab Content Sections -->
+        <div id="tab_content_analytics" class="space-y-6">
+          <!-- Summary metrics cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div
+              class="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm relative overflow-hidden"
+            >
+              <div
+                class="absolute left-0 top-0 h-full w-1 bg-[#0D9488]"
+              ></div>
+              <p class="text-xs text-[#64748B] font-semibold">
+                Overall Average Grade
+              </p>
+              <h3
+                id="statAvgPercentage"
+                class="text-2xl font-bold text-[#0D9488] mt-1"
+              >
+                0.0%
+              </h3>
+            </div>
+            <div
+              class="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm relative overflow-hidden"
+            >
+              <div class="absolute left-0 top-0 h-full w-1 bg-blue-500"></div>
+              <p class="text-xs text-[#64748B] font-semibold">
+                Attendance Rate
+              </p>
+              <h3
+                id="statAttendanceRate"
+                class="text-2xl font-bold text-blue-600 mt-1"
+              >
+                0.0%
+              </h3>
+            </div>
+            <div
+              class="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm relative overflow-hidden"
+            >
+              <div class="absolute left-0 top-0 h-full w-1 bg-amber-500"></div>
+              <p class="text-xs text-[#64748B] font-semibold">
+                Homework Completion
+              </p>
+              <h3
+                id="statHwRate"
+                class="text-2xl font-bold text-amber-600 mt-1"
+              >
+                0.0%
+              </h3>
+            </div>
+            <div
+              class="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm relative overflow-hidden"
+            >
+              <div
+                class="absolute left-0 top-0 h-full w-1 bg-purple-500"
+              ></div>
+              <p class="text-xs text-[#64748B] font-semibold">
+                Pastpaper Completion
+              </p>
+              <h3
+                id="statPpRate"
+                class="text-2xl font-bold text-purple-600 mt-1"
+              >
+                0.0%
+              </h3>
+            </div>
+            <div
+              class="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm relative overflow-hidden"
+            >
+              <div
+                class="absolute left-0 top-0 h-full w-1 bg-slate-400"
+              ></div>
+              <p class="text-xs text-[#64748B] font-semibold">
+                Exams Completed / Graded
+              </p>
+              <h3
+                id="statExamsCount"
+                class="text-2xl font-bold text-[#0F172A] mt-1"
+              >
+                0 / 0
+              </h3>
+            </div>
+            <div
+              class="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm relative overflow-hidden"
+            >
+              <div
+                id="statTrendBar"
+                class="absolute left-0 top-0 h-full w-1 bg-emerald-500"
+              ></div>
+              <p class="text-xs text-[#64748B] font-semibold">
+                Latest Progress Trend
+              </p>
+              <h3
+                id="statTrend"
+                class="text-2xl font-bold text-emerald-600 mt-1"
+              >
+                +0.0%
+              </h3>
+            </div>
+          </div>
+
+          <!-- Charts Container -->
+          <div class="grid grid-cols-1 gap-6">
+            <!-- Full width: Score progression -->
+            <div
+              class="chart-card bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm"
+              id="card_progressLineChart"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <h4
+                  class="text-xs font-bold text-[#0F172A] uppercase tracking-wider"
+                >
+                  Exam & Quiz Score Progression (%)
+                </h4>
+              </div>
+              <div class="chart-canvas-wrap relative h-72">
+                <canvas id="progressLineChart"></canvas>
+              </div>
+              <div
+                class="chart-empty-state h-72 items-center justify-center text-xs text-[#94A3B8] font-medium"
+              >
+                No graded exams yet.
+              </div>
+            </div>
+
+            <!-- Paired: Progress delta + Exam type -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <div
+                class="chart-card bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm"
+                id="card_deltaBarChart"
+              >
+                <h4
+                  class="text-xs font-bold text-[#0F172A] mb-4 uppercase tracking-wider"
+                >
+                  Consecutive Exam Progress Δ (%)
+                </h4>
+                <div class="chart-canvas-wrap relative h-72">
+                  <canvas id="deltaBarChart"></canvas>
+                </div>
+                <div
+                  class="chart-empty-state h-72 items-center justify-center text-xs text-[#94A3B8] font-medium"
+                >
+                  Not enough graded exams yet.
+                </div>
+              </div>
+              <div
+                class="chart-card bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm"
+                id="card_typeBarChart"
+              >
+                <h4
+                  class="text-xs font-bold text-[#0F172A] mb-4 uppercase tracking-wider"
+                >
+                  Performance by Exam Type (%)
+                </h4>
+                <div class="chart-canvas-wrap relative h-72">
+                  <canvas id="typeBarChart"></canvas>
+                </div>
+                <div
+                  class="chart-empty-state h-72 items-center justify-center text-xs text-[#94A3B8] font-medium"
+                >
+                  No graded exams yet.
+                </div>
+              </div>
+            </div>
+
+            <!-- Paired: Grade tiers + Grade letters -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <div
+                class="chart-card bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm"
+                id="card_tierDoughnutChart"
+              >
+                <h4
+                  class="text-xs font-bold text-[#0F172A] mb-4 uppercase tracking-wider"
+                >
+                  Grade Distribution Tiers
+                </h4>
+                <div class="chart-canvas-wrap relative h-72 flex justify-center">
+                  <canvas id="tierDoughnutChart" class="max-h-72"></canvas>
+                </div>
+                <div
+                  class="chart-empty-state h-72 items-center justify-center text-xs text-[#94A3B8] font-medium"
+                >
+                  No graded exams yet.
+                </div>
+              </div>
+              <div
+                class="chart-card bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm"
+                id="card_gradeLetterBarChart"
+              >
+                <h4
+                  class="text-xs font-bold text-[#0F172A] mb-4 uppercase tracking-wider"
+                >
+                  Grade Letter Distribution
+                </h4>
+                <div class="chart-canvas-wrap relative h-72">
+                  <canvas id="gradeLetterBarChart"></canvas>
+                </div>
+                <div
+                  class="chart-empty-state h-72 items-center justify-center text-xs text-[#94A3B8] font-medium"
+                >
+                  No letter grades recorded yet.
+                </div>
+              </div>
+            </div>
+
+            <!-- Paired: Attendance status + Attendance trend -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <div
+                class="chart-card bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm"
+                id="card_attendanceDoughnutChart"
+              >
+                <h4
+                  class="text-xs font-bold text-[#0F172A] mb-4 uppercase tracking-wider"
+                >
+                  Attendance Status Breakdown
+                </h4>
+                <div class="chart-canvas-wrap relative h-72 flex justify-center">
+                  <canvas id="attendanceDoughnutChart" class="max-h-72"></canvas>
+                </div>
+                <div
+                  class="chart-empty-state h-72 items-center justify-center text-xs text-[#94A3B8] font-medium"
+                >
+                  No attendance sessions found.
+                </div>
+              </div>
+              <div
+                class="chart-card bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm"
+                id="card_attendanceTrendChart"
+              >
+                <h4
+                  class="text-xs font-bold text-[#0F172A] mb-4 uppercase tracking-wider"
+                >
+                  Attendance Rate Trend (Cumulative %)
+                </h4>
+                <div class="chart-canvas-wrap relative h-72">
+                  <canvas id="attendanceTrendChart"></canvas>
+                </div>
+                <div
+                  class="chart-empty-state h-72 items-center justify-center text-xs text-[#94A3B8] font-medium"
+                >
+                  No attendance sessions found.
+                </div>
+              </div>
+            </div>
+
+            <!-- Paired: Homework completion + Pastpaper completion -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <div
+                class="chart-card bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm"
+                id="card_homeworkDoughnutChart"
+              >
+                <h4
+                  class="text-xs font-bold text-[#0F172A] mb-4 uppercase tracking-wider"
+                >
+                  Homework Completion
+                </h4>
+                <div class="chart-canvas-wrap relative h-72 flex justify-center">
+                  <canvas id="homeworkDoughnutChart" class="max-h-72"></canvas>
+                </div>
+                <div
+                  class="chart-empty-state h-72 items-center justify-center text-xs text-[#94A3B8] font-medium"
+                >
+                  No homeworks assigned yet.
+                </div>
+              </div>
+              <div
+                class="chart-card bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm"
+                id="card_pastpaperDoughnutChart"
+              >
+                <h4
+                  class="text-xs font-bold text-[#0F172A] mb-4 uppercase tracking-wider"
+                >
+                  Pastpaper Completion
+                </h4>
+                <div class="chart-canvas-wrap relative h-72 flex justify-center">
+                  <canvas id="pastpaperDoughnutChart" class="max-h-72"></canvas>
+                </div>
+                <div
+                  class="chart-empty-state h-72 items-center justify-center text-xs text-[#94A3B8] font-medium"
+                >
+                  No pastpapers assigned yet.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab_content_exams" class="space-y-3 hidden"></div>
+        <div id="tab_content_attendance" class="space-y-3 hidden"></div>
+        <div id="tab_content_homeworks" class="space-y-3 hidden"></div>
+        <div id="tab_content_pastpapers" class="space-y-3 hidden"></div>
+      </div>
+    </div>
+    </main>
+
+    <script>
+      /* ===================== STATE ===================== */
+      let allStudents = [];
+      let currentStudentData = null;
+      let chartInstances = {}; // keyed by canvas id
+      let reportStats = {}; // computed metrics reused by the PDF exporter
+      let activeTab = "analytics";
+
+      const PALETTE = {
+        teal: "#0D9488",
+        tealSoft: "rgba(13,148,136,0.14)",
+        blue: "#3B82F6",
+        purple: "#8B5CF6",
+        amber: "#F59E0B",
+        rose: "#EF4444",
+        emerald: "#10B981",
+        slate: "#64748B",
+        slateLight: "#CBD5E1",
+      };
+
+      /* ===================== CHART.JS GLOBAL THEME ===================== */
+      Chart.defaults.font.family =
+        "'Inter', ui-sans-serif, system-ui, sans-serif";
+      Chart.defaults.color = "#64748B";
+      Chart.defaults.animation.duration = 650;
+      Chart.defaults.animation.easing = "easeOutQuart";
+      Chart.defaults.plugins.legend.labels.usePointStyle = true;
+      Chart.defaults.plugins.legend.labels.boxWidth = 8;
+      Chart.defaults.plugins.legend.labels.padding = 14;
+      Chart.defaults.plugins.legend.labels.font = { size: 11, weight: "600" };
+      Chart.defaults.plugins.tooltip.backgroundColor = "#0F172A";
+      Chart.defaults.plugins.tooltip.padding = 10;
+      Chart.defaults.plugins.tooltip.cornerRadius = 8;
+      Chart.defaults.plugins.tooltip.titleFont = { size: 12, weight: "700" };
+      Chart.defaults.plugins.tooltip.bodyFont = { size: 11.5 };
+      Chart.defaults.plugins.tooltip.displayColors = true;
+      Chart.defaults.plugins.tooltip.boxPadding = 4;
+
+      // Custom plugin: draws a centered total/percentage label inside doughnut charts
+      const centerTextPlugin = {
+        id: "centerText",
+        afterDraw(chart) {
+          const cfg = chart.config.options?.plugins?.centerText;
+          if (!cfg || !cfg.text) return;
+          const {
+            ctx,
+            chartArea: { width, height, left, top },
+          } = chart;
+          ctx.save();
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.font = "800 22px Inter, sans-serif";
+          ctx.fillStyle = cfg.color || "#0F172A";
+          ctx.fillText(cfg.text, left + width / 2, top + height / 2 - 7);
+          if (cfg.subtext) {
+            ctx.font = "600 10px Inter, sans-serif";
+            ctx.fillStyle = "#94A3B8";
+            ctx.fillText(cfg.subtext, left + width / 2, top + height / 2 + 13);
+          }
+          ctx.restore();
+        },
+      };
+      Chart.register(centerTextPlugin);
+
+      function makeVerticalGradient(ctx, area, colorTop, colorBottom) {
+        const gradient = ctx.createLinearGradient(0, area.top, 0, area.bottom);
+        gradient.addColorStop(0, colorTop);
+        gradient.addColorStop(1, colorBottom);
+        return gradient;
+      }
+
+      function hexToRgba(hex, alpha) {
+        const h = hex.replace("#", "");
+        const r = parseInt(h.substring(0, 2), 16);
+        const g = parseInt(h.substring(2, 4), 16);
+        const b = parseInt(h.substring(4, 6), 16);
+        return `rgba(${r},${g},${b},${alpha})`;
+      }
+
+      /* ===================== AUTH + SIDEBAR ===================== */
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (!user.full_name) {
+        window.location.href = "index.html";
+      } else {
+        init();
+      }
+
+      fetch("adminsidebar.html")
+        .then((res) => res.text())
+        .then((html) => {
+          const container = document.getElementById("sidebarContainer");
+          container.innerHTML = html;
+          const scripts = container.querySelectorAll("script");
+          scripts.forEach((script) => {
+            const newScript = document.createElement("script");
+            newScript.textContent = script.textContent;
+            document.body.appendChild(newScript);
+          });
+          if (typeof renderSidebar === "function") {
+            renderSidebar("Students Progress");
+          }
+        });
+
+      async function init() {
+        await fetchStudents();
+      }
+
+      /* ===================== STUDENTS LIST ===================== */
+      async function fetchStudents() {
+        const tbody = document.getElementById("studentsTableBody");
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="px-6 py-12 text-center text-[#64748B]">
+              <div class="flex flex-col items-center justify-center gap-2">
+                <div class="w-6 h-6 border-3 border-[#0D9488] border-t-transparent rounded-full animate-spin"></div>
+                <span class="text-xs font-medium">Loading students progress...</span>
+              </div>
+            </td>
+          </tr>
+        `;
+
+        try {
+          const res = await fetch("/api/student-progress");
+          allStudents = await res.json();
+          renderStudents(allStudents);
+        } catch (err) {
+          console.error(err);
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" class="px-6 py-12 text-center text-red-600 font-medium">
+                Failed to load students progress. Please refresh.
+              </td>
+            </tr>
+          `;
+        }
+      }
+
+      function filterStudents() {
+        const query = document
+          .getElementById("searchInput")
+          .value.toLowerCase();
+        const filtered = allStudents.filter(
+          (s) =>
+            (s.full_name && s.full_name.toLowerCase().includes(query)) ||
+            (s.school_name && s.school_name.toLowerCase().includes(query)),
+        );
+        renderStudents(filtered);
+      }
+
+      function renderStudents(students) {
+        const tbody = document.getElementById("studentsTableBody");
+        const badge = document.getElementById("studentCountBadge");
+        badge.innerText = `${students.length} student${students.length === 1 ? "" : "s"}`;
+
+        if (!students || students.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" class="px-6 py-12 text-center text-[#64748B]">No students found.</td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = students
+          .map(
+            (s) => `
+          <tr class="hover:bg-[#F8FAFC] transition-colors cursor-pointer" onclick="selectStudent(${s.user_id})">
+            <td class="px-6 py-4 font-semibold text-[#0F172A]">${s.full_name}</td>
+            <td class="px-6 py-4 text-[#64748B]">${s.school_name}</td>
+            <td class="px-6 py-4 text-center">
+              <span class="px-2.5 py-1 bg-teal-50 text-[#0D9488] rounded-lg text-xs font-bold">
+                ${s.present_sessions} / ${s.total_sessions}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-center">
+              <span class="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold">
+                ${s.submitted_homeworks} / ${s.total_homeworks}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-center">
+              <span class="px-2.5 py-1 bg-purple-50 text-purple-700 rounded-lg text-xs font-bold">
+                ${s.graded_exams} / ${s.total_exams}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-center">
+              <span class="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold">
+                ${s.submitted_pastpapers} / ${s.total_pastpapers}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-right" onclick="event.stopPropagation()">
+              <button
+                onclick="selectStudent(${s.user_id})"
+                class="px-3 py-1.5 bg-[#0D9488] hover:bg-[#0b7a6e] text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
+              >
+                View Details & Charts
+              </button>
+            </td>
+          </tr>
+        `,
+          )
+          .join("");
+      }
+
+      /* ===================== STUDENT DETAIL ===================== */
+      async function selectStudent(userId) {
+        document.getElementById("studentListView").classList.add("hidden");
+        document.getElementById("studentDetailView").classList.remove("hidden");
+        document.getElementById("loadingDetails").classList.remove("hidden");
+
+        ["analytics", "exams", "attendance", "homeworks", "pastpapers"].forEach(
+          (t) => {
+            document.getElementById(`tab_content_${t}`).classList.add("hidden");
+          },
+        );
+
+        try {
+          const res = await fetch(`/api/student-progress?student_id=${userId}`);
+          currentStudentData = await res.json();
+
+          document.getElementById("mainStudentName").innerText =
+            currentStudentData.student.full_name;
+          document.getElementById("mainStudentSchool").innerText =
+            currentStudentData.student.school_name;
+
+          renderAnalyticsTab();
+          renderExamsTab();
+          renderAttendanceTab();
+          renderHomeworksTab();
+          renderPastpapersTab();
+
+          document.getElementById("loadingDetails").classList.add("hidden");
+          switchTab("analytics");
+        } catch (err) {
+          console.error(err);
+          alert("Failed to load student details");
+          backToList();
+        }
+      }
+
+      function backToList() {
+        document.getElementById("studentDetailView").classList.add("hidden");
+        document.getElementById("studentListView").classList.remove("hidden");
+        currentStudentData = null;
+        destroyAllCharts();
+      }
+
+      function destroyAllCharts() {
+        Object.values(chartInstances).forEach((c) => c && c.destroy());
+        chartInstances = {};
+      }
+
+      function switchTab(tabName) {
+        activeTab = tabName;
+        ["analytics", "exams", "attendance", "homeworks", "pastpapers"].forEach(
+          (t) => {
+            const btn = document.getElementById(`tab_btn_${t}`);
+            const content = document.getElementById(`tab_content_${t}`);
+            if (t === tabName) {
+              btn.className =
+                "py-4 text-xs font-bold border-b-2 border-[#0D9488] text-[#0D9488] transition-all whitespace-nowrap flex items-center gap-1.5";
+              content.classList.remove("hidden");
+            } else {
+              btn.className =
+                "py-4 text-xs font-bold border-b-2 border-transparent text-[#64748B] hover:text-[#0F172A] transition-all whitespace-nowrap flex items-center gap-1.5";
+              content.classList.add("hidden");
+            }
+          },
+        );
+      }
+
+      function setChartCardEmpty(cardId, isEmpty) {
+        const card = document.getElementById(cardId);
+        if (!card) return;
+        card.classList.toggle("is-empty", isEmpty);
+      }
+
+      function latestGradientColor(val) {
+        if (val > 0) return "text-emerald-600";
+        if (val < 0) return "text-rose-600";
+        return "text-slate-600";
+      }
+
+      /* ===================== ANALYTICS TAB (all 9 charts + stats) ===================== */
+      function renderAnalyticsTab() {
+        destroyAllCharts();
+
+        const commonOptions = {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: "index", intersect: false },
+        };
+
+        /* ---------- 1. EXAM METRICS ---------- */
+        const gradedExams = (currentStudentData.exams || []).filter(
+          (e) => e.numeric_grade !== null && parseFloat(e.total_grade) > 0,
+        );
+
+        let totalEarned = 0;
+        let totalPossible = 0;
+        const examLabels = [];
+        const examPercentages = [];
+        const examDeltas = [];
+
+        gradedExams.forEach((ex, idx) => {
+          const label = ex.exam_date
+            ? new Date(ex.exam_date).toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "short",
+              })
+            : ex.exam_title;
+          examLabels.push(label);
+
+          const earned = parseFloat(ex.numeric_grade) || 0;
+          const total = parseFloat(ex.total_grade) || 100;
+          const pct = (earned / total) * 100;
+
+          examPercentages.push(parseFloat(pct.toFixed(1)));
+          totalEarned += earned;
+          totalPossible += total;
+
+          if (idx > 0) {
+            const prevEarned = parseFloat(gradedExams[idx - 1].numeric_grade) || 0;
+            const prevTotal = parseFloat(gradedExams[idx - 1].total_grade) || 100;
+            const prevPct = (prevEarned / prevTotal) * 100;
+            examDeltas.push(parseFloat((pct - prevPct).toFixed(1)));
+          } else {
+            examDeltas.push(0);
+          }
+        });
+
+        const avgPct =
+          totalPossible > 0
+            ? ((totalEarned / totalPossible) * 100).toFixed(1)
+            : "0.0";
+        const latestDelta =
+          examDeltas.length > 0 ? examDeltas[examDeltas.length - 1] : 0;
+
+        /* ---------- 2. ATTENDANCE METRICS ---------- */
+        const attendance = currentStudentData.attendance || [];
+        const attSorted = [...attendance].sort(
+          (a, b) => new Date(a.date) - new Date(b.date),
+        );
+        const attStatusCounts = {};
+        const attTrendLabels = [];
+        const attTrendData = [];
+        let runningPresent = 0;
+
+        attSorted.forEach((a, idx) => {
+          const status = (a.status || "absent").toLowerCase();
+          attStatusCounts[status] = (attStatusCounts[status] || 0) + 1;
+          if (status === "present") runningPresent++;
+          attTrendLabels.push(
+            new Date(a.date).toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+            }),
+          );
+          attTrendData.push(
+            parseFloat(((runningPresent / (idx + 1)) * 100).toFixed(1)),
+          );
+        });
+
+        const attendanceRate = attendance.length
+          ? (((attStatusCounts["present"] || 0) / attendance.length) * 100).toFixed(1)
+          : "0.0";
+
+        /* ---------- 3. HOMEWORK METRICS ---------- */
+        const homeworks = currentStudentData.homeworks || [];
+        const hwStatusCounts = {};
+        homeworks.forEach((h) => {
+          const s = (h.status || "missing").toLowerCase();
+          hwStatusCounts[s] = (hwStatusCounts[s] || 0) + 1;
+        });
+        const hwRate = homeworks.length
+          ? (((hwStatusCounts["submitted"] || 0) / homeworks.length) * 100).toFixed(1)
+          : "0.0";
+
+        /* ---------- 4. PASTPAPER METRICS ---------- */
+        const pastpapers = currentStudentData.pastpapers || [];
+        const ppStatusCounts = {};
+        pastpapers.forEach((p) => {
+          const s = (p.status || "missing").toLowerCase();
+          ppStatusCounts[s] = (ppStatusCounts[s] || 0) + 1;
+        });
+        const ppRate = pastpapers.length
+          ? (((ppStatusCounts["submitted"] || 0) / pastpapers.length) * 100).toFixed(1)
+          : "0.0";
+
+        /* ---------- 5. EXAM TYPE BREAKDOWN ---------- */
+        const typeMap = {};
+        gradedExams.forEach((ex) => {
+          const t = ex.type || "General";
+          const earned = parseFloat(ex.numeric_grade) || 0;
+          const total = parseFloat(ex.total_grade) || 100;
+          const pct = (earned / total) * 100;
+          if (!typeMap[t]) typeMap[t] = { sum: 0, count: 0 };
+          typeMap[t].sum += pct;
+          typeMap[t].count += 1;
+        });
+        const typeLabels = Object.keys(typeMap);
+        const typeData = typeLabels.map((t) =>
+          parseFloat((typeMap[t].sum / typeMap[t].count).toFixed(1)),
+        );
+
+        /* ---------- 6. GRADE TIERS ---------- */
+        const tiers = {
+          "Excellent (≥85%)": 0,
+          "Good (70-84%)": 0,
+          "Average (50-69%)": 0,
+          "Below 50%": 0,
+        };
+        examPercentages.forEach((p) => {
+          if (p >= 85) tiers["Excellent (≥85%)"]++;
+          else if (p >= 70) tiers["Good (70-84%)"]++;
+          else if (p >= 50) tiers["Average (50-69%)"]++;
+          else tiers["Below 50%"]++;
+        });
+
+        /* ---------- 7. LETTER GRADE DISTRIBUTION ---------- */
+        const letterOrder = ["A*", "A", "B", "C", "D", "E", "U", "Pass", "Fail"];
+        const letterCounts = {};
+        gradedExams.forEach((ex) => {
+          if (ex.letter_grade) {
+            letterCounts[ex.letter_grade] = (letterCounts[ex.letter_grade] || 0) + 1;
+          }
+        });
+        const letterLabels = Object.keys(letterCounts).sort((a, b) => {
+          const ia = letterOrder.indexOf(a);
+          const ib = letterOrder.indexOf(b);
+          if (ia === -1 && ib === -1) return a.localeCompare(b);
+          if (ia === -1) return 1;
+          if (ib === -1) return -1;
+          return ia - ib;
+        });
+        const letterData = letterLabels.map((l) => letterCounts[l]);
+
+        /* ---------- STORE STATS FOR CARDS + PDF ---------- */
+        reportStats = {
+          avgPct,
+          examsGraded: gradedExams.length,
+          examsTotal: (currentStudentData.exams || []).length,
+          latestDelta,
+          attendanceRate,
+          hwRate,
+          ppRate,
+        };
+
+        document.getElementById("statAvgPercentage").innerText = `${avgPct}%`;
+        document.getElementById("statAttendanceRate").innerText = `${attendanceRate}%`;
+        document.getElementById("statHwRate").innerText = `${hwRate}%`;
+        document.getElementById("statPpRate").innerText = `${ppRate}%`;
+        document.getElementById("statExamsCount").innerText =
+          `${gradedExams.length} / ${reportStats.examsTotal}`;
+        const trendEl = document.getElementById("statTrend");
+        trendEl.innerText = `${latestDelta >= 0 ? "+" : ""}${latestDelta}%`;
+        trendEl.className = `text-2xl font-bold mt-1 ${latestGradientColor(latestDelta)}`;
+        document.getElementById("statTrendBar").className =
+          `absolute left-0 top-0 h-full w-1 ${latestDelta >= 0 ? "bg-emerald-500" : "bg-rose-500"}`;
+
+        /* ================= CHART 1: Score Progression (smooth gradient line) ================= */
+        setChartCardEmpty("card_progressLineChart", examLabels.length === 0);
+        if (examLabels.length > 0) {
+          chartInstances.progressLineChart = new Chart(
+            document.getElementById("progressLineChart").getContext("2d"),
+            {
+              type: "line",
+              data: {
+                labels: examLabels,
+                datasets: [
+                  {
+                    label: "Score %",
+                    data: examPercentages,
+                    borderColor: PALETTE.teal,
+                    backgroundColor: (context) => {
+                      const { chartArea, ctx } = context.chart;
+                      if (!chartArea) return null;
+                      return makeVerticalGradient(
+                        ctx,
+                        chartArea,
+                        hexToRgba(PALETTE.teal, 0.35),
+                        hexToRgba(PALETTE.teal, 0.02),
+                      );
+                    },
+                    fill: true,
+                    tension: 0.4,
+                    cubicInterpolationMode: "monotone",
+                    borderWidth: 2.5,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: "#fff",
+                    pointBorderColor: PALETTE.teal,
+                    pointBorderWidth: 2,
+                  },
+                ],
+              },
+              options: {
+                ...commonOptions,
+                scales: {
+                  y: {
+                    min: 0,
+                    max: 100,
+                    grid: { color: "#F1F5F9" },
+                    ticks: { callback: (v) => v + "%" },
+                  },
+                  x: { grid: { display: false } },
+                },
+                plugins: {
+                  tooltip: {
+                    callbacks: {
+                      title: (items) =>
+                        gradedExams[items[0].dataIndex]?.exam_title || items[0].label,
+                      label: (item) => `Score: ${item.formattedValue}%`,
+                    },
+                  },
+                },
+              },
+            },
+          );
+        }
+
+        /* ================= CHART 2: Progress Delta (bar) ================= */
+        setChartCardEmpty("card_deltaBarChart", examLabels.length === 0);
+        if (examLabels.length > 0) {
+          chartInstances.deltaBarChart = new Chart(
+            document.getElementById("deltaBarChart").getContext("2d"),
+            {
+              type: "bar",
+              data: {
+                labels: examLabels,
+                datasets: [
+                  {
+                    label: "Progress Δ vs Prev (%)",
+                    data: examDeltas,
+                    backgroundColor: examDeltas.map((d) =>
+                      d >= 0 ? hexToRgba(PALETTE.emerald, 0.85) : hexToRgba(PALETTE.rose, 0.85),
+                    ),
+                    borderRadius: 6,
+                    maxBarThickness: 42,
+                  },
+                ],
+              },
+              options: {
+                ...commonOptions,
+                scales: {
+                  y: { grid: { color: "#F1F5F9" }, ticks: { callback: (v) => v + "%" } },
+                  x: { grid: { display: false } },
+                },
+                plugins: { legend: { display: false } },
+              },
+            },
+          );
+        }
+
+        /* ================= CHART 3: Performance by Exam Type ================= */
+        setChartCardEmpty("card_typeBarChart", typeLabels.length === 0);
+        if (typeLabels.length > 0) {
+          chartInstances.typeBarChart = new Chart(
+            document.getElementById("typeBarChart").getContext("2d"),
+            {
+              type: "bar",
+              data: {
+                labels: typeLabels.map((t) => t.toUpperCase()),
+                datasets: [
+                  {
+                    label: "Avg Score %",
+                    data: typeData,
+                    backgroundColor: (context) => {
+                      const { chartArea, ctx } = context.chart;
+                      if (!chartArea) return PALETTE.blue;
+                      return makeVerticalGradient(
+                        ctx,
+                        chartArea,
+                        PALETTE.blue,
+                        hexToRgba(PALETTE.blue, 0.55),
+                      );
+                    },
+                    borderRadius: 8,
+                    maxBarThickness: 48,
+                  },
+                ],
+              },
+              options: {
+                ...commonOptions,
+                scales: {
+                  y: {
+                    min: 0,
+                    max: 100,
+                    grid: { color: "#F1F5F9" },
+                    ticks: { callback: (v) => v + "%" },
+                  },
+                  x: { grid: { display: false } },
+                },
+                plugins: { legend: { display: false } },
+              },
+            },
+          );
+        }
+
+        /* ================= CHART 4: Grade Distribution Tiers (doughnut) ================= */
+        const tierTotal = Object.values(tiers).reduce((a, b) => a + b, 0);
+        setChartCardEmpty("card_tierDoughnutChart", tierTotal === 0);
+        if (tierTotal > 0) {
+          chartInstances.tierDoughnutChart = new Chart(
+            document.getElementById("tierDoughnutChart").getContext("2d"),
+            {
+              type: "doughnut",
+              data: {
+                labels: Object.keys(tiers),
+                datasets: [
+                  {
+                    data: Object.values(tiers),
+                    backgroundColor: [
+                      PALETTE.emerald,
+                      PALETTE.blue,
+                      PALETTE.amber,
+                      PALETTE.rose,
+                    ],
+                    borderWidth: 3,
+                    borderColor: "#fff",
+                    hoverOffset: 8,
+                  },
+                ],
+              },
+              options: {
+                ...commonOptions,
+                cutout: "68%",
+                plugins: {
+                  legend: { position: "bottom" },
+                  centerText: {
+                    text: `${avgPct}%`,
+                    subtext: "Avg Score",
+                    color: PALETTE.teal,
+                  },
+                },
+              },
+            },
+          );
+        }
+
+        /* ================= CHART 5: Grade Letter Distribution (bar) ================= */
+        setChartCardEmpty("card_gradeLetterBarChart", letterLabels.length === 0);
+        if (letterLabels.length > 0) {
+          chartInstances.gradeLetterBarChart = new Chart(
+            document.getElementById("gradeLetterBarChart").getContext("2d"),
+            {
+              type: "bar",
+              data: {
+                labels: letterLabels,
+                datasets: [
+                  {
+                    label: "Number of Exams",
+                    data: letterData,
+                    backgroundColor: PALETTE.purple,
+                    borderRadius: 8,
+                    maxBarThickness: 40,
+                  },
+                ],
+              },
+              options: {
+                ...commonOptions,
+                scales: {
+                  y: {
+                    grid: { color: "#F1F5F9" },
+                    ticks: { precision: 0 },
+                  },
+                  x: { grid: { display: false } },
+                },
+                plugins: { legend: { display: false } },
+              },
+            },
+          );
+        }
+
+        /* ================= CHART 6: Attendance Status Breakdown (doughnut) ================= */
+        setChartCardEmpty("card_attendanceDoughnutChart", attendance.length === 0);
+        if (attendance.length > 0) {
+          const attLabels = Object.keys(attStatusCounts);
+          const attColorMap = {
+            present: PALETTE.emerald,
+            absent: PALETTE.rose,
+            late: PALETTE.amber,
+            excused: PALETTE.blue,
+          };
+          chartInstances.attendanceDoughnutChart = new Chart(
+            document.getElementById("attendanceDoughnutChart").getContext("2d"),
+            {
+              type: "doughnut",
+              data: {
+                labels: attLabels.map((l) => l[0].toUpperCase() + l.slice(1)),
+                datasets: [
+                  {
+                    data: attLabels.map((l) => attStatusCounts[l]),
+                    backgroundColor: attLabels.map(
+                      (l, i) =>
+                        attColorMap[l] ||
+                        [PALETTE.slate, PALETTE.purple][i % 2],
+                    ),
+                    borderWidth: 3,
+                    borderColor: "#fff",
+                    hoverOffset: 8,
+                  },
+                ],
+              },
+              options: {
+                ...commonOptions,
+                cutout: "68%",
+                plugins: {
+                  legend: { position: "bottom" },
+                  centerText: {
+                    text: `${attendanceRate}%`,
+                    subtext: "Present",
+                    color: PALETTE.blue,
+                  },
+                },
+              },
+            },
+          );
+        }
+
+        /* ================= CHART 7: Attendance Trend (line) ================= */
+        setChartCardEmpty("card_attendanceTrendChart", attTrendLabels.length === 0);
+        if (attTrendLabels.length > 0) {
+          chartInstances.attendanceTrendChart = new Chart(
+            document.getElementById("attendanceTrendChart").getContext("2d"),
+            {
+              type: "line",
+              data: {
+                labels: attTrendLabels,
+                datasets: [
+                  {
+                    label: "Cumulative Attendance %",
+                    data: attTrendData,
+                    borderColor: PALETTE.blue,
+                    backgroundColor: (context) => {
+                      const { chartArea, ctx } = context.chart;
+                      if (!chartArea) return null;
+                      return makeVerticalGradient(
+                        ctx,
+                        chartArea,
+                        hexToRgba(PALETTE.blue, 0.3),
+                        hexToRgba(PALETTE.blue, 0.02),
+                      );
+                    },
+                    fill: true,
+                    tension: 0.4,
+                    cubicInterpolationMode: "monotone",
+                    borderWidth: 2.5,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                  },
+                ],
+              },
+              options: {
+                ...commonOptions,
+                scales: {
+                  y: {
+                    min: 0,
+                    max: 100,
+                    grid: { color: "#F1F5F9" },
+                    ticks: { callback: (v) => v + "%" },
+                  },
+                  x: { grid: { display: false } },
+                },
+                plugins: { legend: { display: false } },
+              },
+            },
+          );
+        }
+
+        /* ================= CHART 8: Homework Completion (doughnut) ================= */
+        setChartCardEmpty("card_homeworkDoughnutChart", homeworks.length === 0);
+        if (homeworks.length > 0) {
+          const hwLabels = Object.keys(hwStatusCounts);
+          const hwColorMap = { submitted: PALETTE.emerald, late: PALETTE.amber, missing: PALETTE.rose };
+          chartInstances.homeworkDoughnutChart = new Chart(
+            document.getElementById("homeworkDoughnutChart").getContext("2d"),
+            {
+              type: "doughnut",
+              data: {
+                labels: hwLabels.map((l) => l[0].toUpperCase() + l.slice(1)),
+                datasets: [
+                  {
+                    data: hwLabels.map((l) => hwStatusCounts[l]),
+                    backgroundColor: hwLabels.map(
+                      (l, i) => hwColorMap[l] || [PALETTE.slate, PALETTE.purple][i % 2],
+                    ),
+                    borderWidth: 3,
+                    borderColor: "#fff",
+                    hoverOffset: 8,
+                  },
+                ],
+              },
+              options: {
+                ...commonOptions,
+                cutout: "68%",
+                plugins: {
+                  legend: { position: "bottom" },
+                  centerText: { text: `${hwRate}%`, subtext: "Submitted", color: PALETTE.amber },
+                },
+              },
+            },
+          );
+        }
+
+        /* ================= CHART 9: Pastpaper Completion (doughnut) ================= */
+        setChartCardEmpty("card_pastpaperDoughnutChart", pastpapers.length === 0);
+        if (pastpapers.length > 0) {
+          const ppLabels = Object.keys(ppStatusCounts);
+          const ppColorMap = { submitted: PALETTE.emerald, missing: PALETTE.rose, late: PALETTE.amber };
+          chartInstances.pastpaperDoughnutChart = new Chart(
+            document.getElementById("pastpaperDoughnutChart").getContext("2d"),
+            {
+              type: "doughnut",
+              data: {
+                labels: ppLabels.map((l) => l[0].toUpperCase() + l.slice(1)),
+                datasets: [
+                  {
+                    data: ppLabels.map((l) => ppStatusCounts[l]),
+                    backgroundColor: ppLabels.map(
+                      (l, i) => ppColorMap[l] || [PALETTE.slate, PALETTE.blue][i % 2],
+                    ),
+                    borderWidth: 3,
+                    borderColor: "#fff",
+                    hoverOffset: 8,
+                  },
+                ],
+              },
+              options: {
+                ...commonOptions,
+                cutout: "68%",
+                plugins: {
+                  legend: { position: "bottom" },
+                  centerText: { text: `${ppRate}%`, subtext: "Submitted", color: PALETTE.purple },
+                },
+              },
+            },
+          );
+        }
+      }
+
+      /* ===================== LIST TABS (unchanged look, minor polish) ===================== */
+      function renderExamsTab() {
+        const container = document.getElementById("tab_content_exams");
+        const items = currentStudentData.exams;
+
+        if (!items || items.length === 0) {
+          container.innerHTML = `<p class="text-xs text-[#64748B] text-center py-6 bg-white rounded-xl border border-[#E2E8F0]">No exams found.</p>`;
+          return;
+        }
+
+        container.innerHTML = items
+          .map((i) => {
+            const pct =
+              i.numeric_grade !== null && parseFloat(i.total_grade) > 0
+                ? (
+                    (parseFloat(i.numeric_grade) / parseFloat(i.total_grade)) *
+                    100
+                  ).toFixed(1)
+                : null;
+            return `
+            <div class="bg-white border border-[#E2E8F0] p-4 rounded-xl space-y-2 shadow-sm">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold text-[#0F172A]">${i.exam_title} <span class="text-[10px] text-[#64748B] font-normal">(${i.type})</span></h4>
+                <div class="flex items-center gap-2">
+                  <span class="px-2.5 py-1 bg-purple-50 text-purple-800 rounded-lg text-xs font-bold">
+                    Score: ${i.numeric_grade !== null ? `${i.numeric_grade} / ${i.total_grade} (${pct}%)` : "Not Graded"}
+                  </span>
+                  ${i.letter_grade ? `<span class="px-2.5 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-bold">${i.letter_grade}</span>` : ""}
+                </div>
+              </div>
+              ${i.comment ? `<p class="text-xs bg-[#F8FAFC] p-2 rounded border border-[#E2E8F0] text-[#0F172A]"><strong>Feedback:</strong> ${i.comment}</p>` : ""}
+            </div>
+          `;
+          })
+          .join("");
+      }
+
+      function renderAttendanceTab() {
+        const container = document.getElementById("tab_content_attendance");
+        const items = currentStudentData.attendance;
+        if (!items || items.length === 0) {
+          container.innerHTML = `<p class="text-xs text-[#64748B] text-center py-6 bg-white rounded-xl border border-[#E2E8F0]">No attendance sessions found.</p>`;
+          return;
+        }
+        container.innerHTML = items
+          .map((i) => {
+            const status = (i.status || "absent").toLowerCase();
+            const badgeClass =
+              status === "present"
+                ? "bg-emerald-100 text-emerald-800"
+                : status === "late"
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-rose-100 text-rose-800";
+            return `
+          <div class="bg-white border border-[#E2E8F0] p-4 rounded-xl flex items-center justify-between shadow-sm">
+            <div>
+              <h4 class="text-xs font-bold text-[#0F172A]">${i.session_title || "Attendance Session"}</h4>
+              <p class="text-[11px] text-[#64748B] mt-0.5">Date: ${i.date}</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-lg text-xs font-semibold uppercase ${badgeClass}">
+              ${i.status}
+            </span>
+          </div>
+        `;
+          })
+          .join("");
+      }
+
+      function renderHomeworksTab() {
+        const container = document.getElementById("tab_content_homeworks");
+        const items = currentStudentData.homeworks;
+        if (!items || items.length === 0) {
+          container.innerHTML = `<p class="text-xs text-[#64748B] text-center py-6 bg-white rounded-xl border border-[#E2E8F0]">No homeworks found.</p>`;
+          return;
+        }
+        container.innerHTML = items
+          .map((i) => {
+            const status = (i.status || "missing").toLowerCase();
+            const badgeClass =
+              status === "submitted"
+                ? "bg-emerald-100 text-emerald-800"
+                : status === "late"
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-rose-100 text-rose-800";
+            return `
+          <div class="bg-white border border-[#E2E8F0] p-4 rounded-xl space-y-2 shadow-sm">
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-bold text-[#0F172A]">${i.homework_title}</h4>
+              <span class="px-2.5 py-1 rounded-lg text-xs font-semibold uppercase ${badgeClass}">
+                ${i.status}
+              </span>
+            </div>
+            <p class="text-[11px] text-[#64748B]">Deadline: ${i.deadline ? new Date(i.deadline).toLocaleString() : "No deadline"}</p>
+            ${i.admin_comment ? `<p class="text-xs bg-[#F8FAFC] p-2 rounded border border-[#E2E8F0] text-[#0F172A]"><strong>Comment:</strong> ${i.admin_comment}</p>` : ""}
+          </div>
+        `;
+          })
+          .join("");
+      }
+
+      function renderPastpapersTab() {
+        const container = document.getElementById("tab_content_pastpapers");
+        const items = currentStudentData.pastpapers;
+        if (!items || items.length === 0) {
+          container.innerHTML = `<p class="text-xs text-[#64748B] text-center py-6 bg-white rounded-xl border border-[#E2E8F0]">No pastpapers found.</p>`;
+          return;
+        }
+        container.innerHTML = items
+          .map((i) => {
+            const status = (i.status || "missing").toLowerCase();
+            const badgeClass =
+              status === "submitted"
+                ? "bg-emerald-100 text-emerald-800"
+                : status === "late"
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-rose-100 text-rose-800";
+            return `
+          <div class="bg-white border border-[#E2E8F0] p-4 rounded-xl flex items-center justify-between shadow-sm">
+            <div>
+              <h4 class="text-xs font-bold text-[#0F172A]">${i.pastpaper_title}</h4>
+              <p class="text-[11px] text-[#64748B] mt-0.5">${i.month} ${i.year}</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-lg text-xs font-semibold uppercase ${badgeClass}">
+              ${i.status}
+            </span>
+          </div>
+        `;
+          })
+          .join("");
+      }
+
+      /* ===================== PDF REPORT EXPORT (native jsPDF + AutoTable) =====================
+         Why this approach instead of html2pdf/html2canvas:
+         - Chart images come straight from Chart.js's own canvas via toBase64Image(), so they are
+           always full-resolution and never mid-animation or mis-cropped.
+         - Every chart/section is measured before being placed; if it doesn't fit the remaining
+           page space, a new page is started BEFORE drawing it — so a chart is never split in half.
+         - Tables use jsPDF-AutoTable, which paginates automatically with repeating headers,
+           so long exam/attendance/homework lists are never cut off either.
+      */
+      function ensureSpace(doc, y, neededHeight, margin, pageH) {
+        if (y + neededHeight > pageH - margin - 8) {
+          doc.addPage();
+          return margin;
+        }
+        return y;
+      }
+
+      function addSectionTitle(doc, text, y, margin, contentW, pageH) {
+        if (pageH) y = ensureSpace(doc, y, 14, margin, pageH);
+        doc.setFillColor(13, 148, 136);
+        doc.rect(margin, y, 3, 6, "F");
+        doc.setFontSize(11.5);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(15, 23, 42);
+        doc.text(text, margin + 6, y + 5);
+        return y + 12;
+      }
+
+      function addStatsGrid(doc, y, margin, contentW) {
+        const s = reportStats;
+        const items = [
+          { label: "Overall Average Grade", value: `${s.avgPct ?? "0.0"}%`, color: [13, 148, 136] },
+          { label: "Attendance Rate", value: `${s.attendanceRate ?? "0.0"}%`, color: [59, 130, 246] },
+          { label: "Homework Completion", value: `${s.hwRate ?? "0.0"}%`, color: [245, 158, 11] },
+          { label: "Pastpaper Completion", value: `${s.ppRate ?? "0.0"}%`, color: [139, 92, 246] },
+          { label: "Exams Graded", value: `${s.examsGraded ?? 0} / ${s.examsTotal ?? 0}`, color: [15, 23, 42] },
+          {
+            label: "Latest Progress Trend",
+            value: `${(s.latestDelta ?? 0) >= 0 ? "+" : ""}${s.latestDelta ?? 0}%`,
+            color: (s.latestDelta ?? 0) >= 0 ? [16, 185, 129] : [239, 68, 68],
+          },
+        ];
+        const cols = 3,
+          gap = 5;
+        const boxW = (contentW - gap * (cols - 1)) / cols;
+        const boxH = 20;
+        items.forEach((item, i) => {
+          const col = i % cols,
+            row = Math.floor(i / cols);
+          const x = margin + col * (boxW + gap);
+          const by = y + row * (boxH + gap);
+          doc.setDrawColor(226, 232, 240);
+          doc.setFillColor(255, 255, 255);
+          doc.roundedRect(x, by, boxW, boxH, 2, 2, "FD");
+          doc.setFillColor(...item.color);
+          doc.roundedRect(x, by, 2, boxH, 1, 1, "F");
+          doc.setFontSize(7);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(100, 116, 139);
+          doc.text(item.label, x + 5, by + 7, { maxWidth: boxW - 8 });
+          doc.setFontSize(13);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(15, 23, 42);
+          doc.text(item.value, x + 5, by + 15.5);
+        });
+        const rows = Math.ceil(items.length / cols);
+        return y + rows * (boxH + gap) + 4;
+      }
+
+      function placeChartFull(doc, chartId, title, y, margin, contentW, pageH) {
+        const chart = chartInstances[chartId];
+        if (!chart) return y;
+        const canvas = chart.canvas;
+        const ratio = canvas.height / canvas.width;
+        const imgW = contentW;
+        const imgH = imgW * ratio;
+        const totalH = imgH + 10;
+        y = ensureSpace(doc, y, totalH, margin, pageH);
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(71, 85, 105);
+        doc.text(title, margin, y + 4);
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(margin, y + 7, imgW, imgH, 2, 2);
+        doc.addImage(chart.toBase64Image("image/png", 1.0), "PNG", margin, y + 7, imgW, imgH);
+        return y + totalH + 6;
+      }
+
+      function placeChartPair(doc, id1, title1, id2, title2, y, margin, contentW, pageH) {
+        const gap = 6;
+        const halfW = (contentW - gap) / 2;
+        const c1 = chartInstances[id1];
+        const c2 = chartInstances[id2];
+        const h1 = c1 ? halfW * (c1.canvas.height / c1.canvas.width) : 0;
+        const h2 = c2 ? halfW * (c2.canvas.height / c2.canvas.width) : 0;
+        const rowH = Math.max(h1, h2);
+        if (!c1 && !c2) return y;
+        const totalH = rowH + 10;
+        y = ensureSpace(doc, y, totalH, margin, pageH);
+
+        if (c1) {
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(71, 85, 105);
+          doc.text(title1, margin, y + 4);
+          doc.setDrawColor(226, 232, 240);
+          doc.roundedRect(margin, y + 7, halfW, h1, 2, 2);
+          doc.addImage(c1.toBase64Image("image/png", 1.0), "PNG", margin, y + 7, halfW, h1);
+        }
+        if (c2) {
+          const x2 = margin + halfW + gap;
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(71, 85, 105);
+          doc.text(title2, x2, y + 4);
+          doc.setDrawColor(226, 232, 240);
+          doc.roundedRect(x2, y + 7, halfW, h2, 2, 2);
+          doc.addImage(c2.toBase64Image("image/png", 1.0), "PNG", x2, y + 7, halfW, h2);
+        }
+        return y + totalH + 6;
+      }
+
+      function statusCellColor(rawValue) {
+        const v = (rawValue || "").toLowerCase();
+        if (v === "present" || v === "submitted") return [16, 185, 129];
+        if (v === "late") return [245, 158, 11];
+        return [239, 68, 68]; // absent / missing / other
+      }
+
+      function addExamsTable(doc, y, margin, contentW) {
+        const rows = (currentStudentData.exams || []).map((e) => {
+          const pct =
+            e.numeric_grade !== null && parseFloat(e.total_grade) > 0
+              ? ((parseFloat(e.numeric_grade) / parseFloat(e.total_grade)) * 100).toFixed(1) + "%"
+              : "—";
+          return [
+            e.exam_title,
+            (e.type || "").toUpperCase(),
+            e.exam_date ? new Date(e.exam_date).toLocaleDateString() : "—",
+            e.numeric_grade !== null ? `${e.numeric_grade} / ${e.total_grade}` : "Not graded",
+            pct,
+            e.letter_grade || "—",
+            e.comment || "",
+          ];
+        });
+        doc.autoTable({
+          startY: y,
+          margin: { left: margin, right: margin },
+          head: [["Exam", "Type", "Date", "Score", "%", "Grade", "Comment"]],
+          body: rows,
+          styles: { fontSize: 7.5, cellPadding: 2.5, valign: "middle", textColor: [15, 23, 42], overflow: "linebreak" },
+          headStyles: { fillColor: [13, 148, 136], textColor: 255, fontStyle: "bold" },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+          columnStyles: { 6: { cellWidth: 45 } },
+        });
+        return doc.lastAutoTable.finalY + 6;
+      }
+
+      function addAttendanceTable(doc, y, margin, contentW) {
+        const rows = (currentStudentData.attendance || []).map((a) => [
+          a.session_title || "Attendance Session",
+          a.date ? new Date(a.date).toLocaleDateString() : "—",
+          (a.status || "absent").toUpperCase(),
+        ]);
+        doc.autoTable({
+          startY: y,
+          margin: { left: margin, right: margin },
+          head: [["Session", "Date", "Status"]],
+          body: rows,
+          styles: { fontSize: 8, cellPadding: 3, valign: "middle", textColor: [15, 23, 42] },
+          headStyles: { fillColor: [13, 148, 136], textColor: 255, fontStyle: "bold" },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+          didParseCell: (data) => {
+            if (data.section === "body" && data.column.index === 2) {
+              data.cell.styles.textColor = statusCellColor(data.cell.raw);
+              data.cell.styles.fontStyle = "bold";
+            }
+          },
+        });
+        return doc.lastAutoTable.finalY + 6;
+      }
+
+      function addHomeworksTable(doc, y, margin, contentW) {
+        const rows = (currentStudentData.homeworks || []).map((h) => [
+          h.homework_title,
+          h.deadline ? new Date(h.deadline).toLocaleString() : "No deadline",
+          (h.status || "missing").toUpperCase(),
+          h.admin_comment || "",
+        ]);
+        doc.autoTable({
+          startY: y,
+          margin: { left: margin, right: margin },
+          head: [["Homework", "Deadline", "Status", "Comment"]],
+          body: rows,
+          styles: { fontSize: 8, cellPadding: 3, valign: "middle", textColor: [15, 23, 42], overflow: "linebreak" },
+          headStyles: { fillColor: [13, 148, 136], textColor: 255, fontStyle: "bold" },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+          columnStyles: { 3: { cellWidth: 55 } },
+          didParseCell: (data) => {
+            if (data.section === "body" && data.column.index === 2) {
+              data.cell.styles.textColor = statusCellColor(data.cell.raw);
+              data.cell.styles.fontStyle = "bold";
+            }
+          },
+        });
+        return doc.lastAutoTable.finalY + 6;
+      }
+
+      function addPastpapersTable(doc, y, margin, contentW) {
+        const rows = (currentStudentData.pastpapers || []).map((p) => [
+          p.pastpaper_title,
+          `${p.month || ""} ${p.year || ""}`.trim(),
+          (p.status || "missing").toUpperCase(),
+        ]);
+        doc.autoTable({
+          startY: y,
+          margin: { left: margin, right: margin },
+          head: [["Paper", "Period", "Status"]],
+          body: rows,
+          styles: { fontSize: 8, cellPadding: 3, valign: "middle", textColor: [15, 23, 42] },
+          headStyles: { fillColor: [13, 148, 136], textColor: 255, fontStyle: "bold" },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+          didParseCell: (data) => {
+            if (data.section === "body" && data.column.index === 2) {
+              data.cell.styles.textColor = statusCellColor(data.cell.raw);
+              data.cell.styles.fontStyle = "bold";
+            }
+          },
+        });
+        return doc.lastAutoTable.finalY + 6;
+      }
+
+      async function exportStudentPDF() {
+        if (!currentStudentData) return;
+        const exportBtn = document.getElementById("exportPdfBtn");
+        const originalLabel = exportBtn.innerHTML;
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = `<span class="inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span> Generating report...`;
+
+        try {
+          const prevTab = activeTab;
+          switchTab("analytics");
+          // Give layout/canvas a moment to settle at full size, then force a final,
+          // non-animated render so toBase64Image() captures a crisp, complete frame.
+          await new Promise((r) => setTimeout(r, 300));
+          Object.values(chartInstances).forEach((c) => {
+            if (c) {
+              c.resize();
+              c.update("none");
+            }
+          });
+          await new Promise((r) => setTimeout(r, 150));
+
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+          const pageW = doc.internal.pageSize.getWidth();
+          const pageH = doc.internal.pageSize.getHeight();
+          const margin = 12;
+          const contentW = pageW - margin * 2;
+          let y;
+
+          const student = currentStudentData.student;
+          const now = new Date();
+
+          // ---- Header banner ----
+          doc.setFillColor(13, 148, 136);
+          doc.rect(0, 0, pageW, 30, "F");
+          doc.setTextColor(255, 255, 255);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(16);
+          doc.text("Student Progress Report", margin, 14);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(9);
+          doc.text(`${student.full_name}  •  ${student.school_name}`, margin, 21);
+          doc.setFontSize(8);
+          doc.text(
+            `Generated ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`,
+            margin,
+            26.5,
+          );
+          doc.setTextColor(15, 23, 42);
+          y = 38;
+
+          // ---- Overview stats ----
+          y = addSectionTitle(doc, "Overview", y, margin, contentW);
+          y = addStatsGrid(doc, y, margin, contentW);
+
+          // ---- Charts ----
+          y = addSectionTitle(doc, "Performance Analytics", y, margin, contentW, pageH);
+          y = placeChartFull(doc, "progressLineChart", "Exam & Quiz Score Progression", y, margin, contentW, pageH);
+          y = placeChartPair(doc, "deltaBarChart", "Consecutive Exam Progress (Δ%)", "typeBarChart", "Performance by Exam Type", y, margin, contentW, pageH);
+          y = placeChartPair(doc, "tierDoughnutChart", "Grade Distribution Tiers", "gradeLetterBarChart", "Grade Letter Distribution", y, margin, contentW, pageH);
+          y = placeChartPair(doc, "attendanceDoughnutChart", "Attendance Status Breakdown", "attendanceTrendChart", "Attendance Rate Trend", y, margin, contentW, pageH);
+          y = placeChartPair(doc, "homeworkDoughnutChart", "Homework Completion", "pastpaperDoughnutChart", "Pastpaper Completion", y, margin, contentW, pageH);
+
+          // ---- Tables (own pages, auto-paginated by AutoTable) ----
+          doc.addPage();
+          y = margin;
+          y = addSectionTitle(doc, "Exams & Grades", y, margin, contentW);
+          y = addExamsTable(doc, y, margin, contentW);
+
+          doc.addPage();
+          y = margin;
+          y = addSectionTitle(doc, "Attendance Record", y, margin, contentW);
+          y = addAttendanceTable(doc, y, margin, contentW);
+
+          doc.addPage();
+          y = margin;
+          y = addSectionTitle(doc, "Homework Submissions", y, margin, contentW);
+          y = addHomeworksTable(doc, y, margin, contentW);
+
+          doc.addPage();
+          y = margin;
+          y = addSectionTitle(doc, "Past Papers", y, margin, contentW);
+          y = addPastpapersTable(doc, y, margin, contentW);
+
+          // ---- Footer page numbers on every page ----
+          const totalPages = doc.internal.getNumberOfPages();
+          for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.setFontSize(7.5);
+            doc.setTextColor(148, 163, 184);
+            doc.text(`${student.full_name} — Progress Report`, margin, pageH - 6);
+            doc.text(`Page ${i} of ${totalPages}`, pageW - margin, pageH - 6, { align: "right" });
+          }
+
+          doc.save(`${student.full_name.replace(/\s+/g, "_")}_Progress_Report.pdf`);
+          switchTab(prevTab);
+        } catch (err) {
+          console.error(err);
+          alert("Failed to generate the PDF report. Please try again.");
+        } finally {
+          exportBtn.disabled = false;
+          exportBtn.innerHTML = originalLabel;
+        }
+      }
+    </script>
+  </body>
+</html>

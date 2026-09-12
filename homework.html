@@ -1,0 +1,518 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Homework Assignments — Student Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-[#F8FAFC] text-[#0F172A] font-sans min-h-screen flex">
+    <!-- Sidebar Container -->
+    <aside
+      id="sidebarContainer"
+      class="hidden md:flex flex-col shrink-0 h-screen sticky top-0"
+    ></aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto">    <!-- Mobile burger button (shown only on mobile) -->
+    <div class="md:hidden sticky top-0 z-30 bg-white border-b border-[#E2E8F0] px-4 py-3 flex items-center gap-3 shadow-sm">
+      <button
+        onclick="if(typeof openMobileSidebar==='function')openMobileSidebar();"
+        class="p-2 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[#0F172A] hover:bg-slate-100 transition-colors flex-shrink-0"
+        aria-label="Open menu"
+      >
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <span class="font-bold text-[#0F172A] text-base tracking-tight" style="font-family:'Urbanist',sans-serif;">MyPortal</span>
+    </div>      <div class="p-6 md:p-10">
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
+      >
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-[#0F172A]">
+            Homework Assignments
+          </h1>
+          <p class="text-sm text-[#64748B]">
+            View your upcoming homework assignments, track deadlines,
+            instructions, and feedback by chapter.
+          </p>
+        </div>
+      </div>
+
+      <!-- Big Countdown Banner for Nearest Deadline -->
+      <div
+        id="countdownBanner"
+        class="bg-gradient-to-r from-[#0D9488] to-[#0f766e] text-white rounded-3xl p-6 sm:p-8 shadow-md mb-8 relative overflow-hidden hidden"
+      >
+        <div
+          class="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"
+        ></div>
+        <div
+          class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6"
+        >
+          <div>
+            <div
+              class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-semibold mb-3"
+            >
+              <svg
+                class="w-3.5 h-3.5 animate-pulse"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Nearest Deadline Countdown
+            </div>
+            <h2
+              id="countdownTitle"
+              class="text-xl sm:text-2xl font-bold tracking-tight"
+            >
+              Loading upcoming deadline...
+            </h2>
+            <p
+              id="countdownSubtitle"
+              class="text-xs sm:text-sm text-teal-100 mt-1"
+            >
+              Make sure to check instructions and requirements before time runs
+              out.
+            </p>
+          </div>
+          <div
+            class="flex items-center gap-3 sm:gap-4 bg-black/20 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 self-start lg:self-auto"
+          >
+            <div class="text-center">
+              <span id="cdDays" class="text-2xl sm:text-3xl font-bold">00</span>
+              <span
+                class="block text-[10px] uppercase tracking-wider text-teal-200 font-medium"
+                >Days</span
+              >
+            </div>
+            <span class="text-xl font-bold text-teal-300">:</span>
+            <div class="text-center">
+              <span id="cdHours" class="text-2xl sm:text-3xl font-bold"
+                >00</span
+              >
+              <span
+                class="block text-[10px] uppercase tracking-wider text-teal-200 font-medium"
+                >Hours</span
+              >
+            </div>
+            <span class="text-xl font-bold text-teal-300">:</span>
+            <div class="text-center">
+              <span id="cdMins" class="text-2xl sm:text-3xl font-bold">00</span>
+              <span
+                class="block text-[10px] uppercase tracking-wider text-teal-200 font-medium"
+                >Mins</span
+              >
+            </div>
+            <span class="text-xl font-bold text-teal-300">:</span>
+            <div class="text-center">
+              <span id="cdSecs" class="text-2xl sm:text-3xl font-bold">00</span>
+              <span
+                class="block text-[10px] uppercase tracking-wider text-teal-200 font-medium"
+                >Secs</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters and Search Bar -->
+      <div
+        class="bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-6 shadow-sm mb-8 flex flex-col md:flex-row items-center justify-between gap-4"
+      >
+        <div class="relative w-full md:w-96">
+          <svg
+            class="absolute left-3.5 top-3.5 w-4 h-4 text-[#64748B]"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          <input
+            type="text"
+            id="searchInput"
+            oninput="filterHomeworks()"
+            placeholder="Search homeworks by title or instructions..."
+            class="w-full pl-10 pr-4 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488] text-[#0F172A]"
+          />
+        </div>
+        <div
+          class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end"
+        >
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <label
+              class="text-xs font-semibold text-[#64748B] uppercase tracking-wider"
+              >Sort:</label
+            >
+            <div class="relative flex-1 sm:flex-none">
+              <select
+                id="sortSelect"
+                onchange="filterHomeworks()"
+                class="w-full appearance-none pl-3 pr-9 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm font-medium text-[#0F172A] focus:outline-none focus:border-[#0D9488] hover:border-[#0D9488] transition-colors cursor-pointer"
+              >
+                <option value="deadline-soon">Deadline: Soonest First</option>
+                <option value="deadline-late">Deadline: Latest First</option>
+                <option value="title">Title (A-Z)</option>
+              </select>
+              <div
+                class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#64748B]"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chapters Accordion Container -->
+      <div id="chaptersContainer" class="space-y-4">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+    </main>
+
+    <script>
+      let allHomeworks = [];
+      let allChapters = [];
+      let countdownInterval = null;
+      // Keep track of open/closed state for each chapter ID. Default to open (true).
+      const openChapters = {};
+
+      // Check authentication
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (!user.full_name) {
+        window.location.href = "index.html";
+      } else {
+        init();
+      }
+
+      // Load Sidebar component dynamically and initialize active state
+      fetch("sidebar.html")
+        .then((res) => res.text())
+        .then((html) => {
+          const container = document.getElementById("sidebarContainer");
+          container.innerHTML = html;
+          const scripts = container.querySelectorAll("script");
+          scripts.forEach((script) => {
+            const newScript = document.createElement("script");
+            newScript.textContent = script.textContent;
+            document.body.appendChild(newScript);
+          });
+          if (typeof renderSidebar === "function") {
+            renderSidebar("Homework");
+          }
+        });
+
+      async function init() {
+        const container = document.getElementById("chaptersContainer");
+        container.innerHTML = `
+          <div class="py-20 flex flex-col items-center justify-center gap-3">
+            <div class="w-8 h-8 border-4 border-[#0D9488] border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-sm font-medium text-[#64748B]">Loading chapters and homework assignments...</p>
+          </div>
+        `;
+
+        try {
+          const [chaptersRes, homeworksRes] = await Promise.all([
+            fetch("/api/chapters"),
+            fetch(`/api/homeworks?user_id=${user.id}`),
+          ]);
+          allChapters = await chaptersRes.json();
+          allHomeworks = await homeworksRes.json();
+
+          // Initialize all chapters as open by default
+          allChapters.forEach((c) => {
+            if (openChapters[c.id] === undefined) {
+              openChapters[c.id] = true;
+            }
+          });
+
+          filterHomeworks();
+          setupNearestDeadlineCountdown();
+        } catch (err) {
+          console.error("Failed to load homework or chapter data", err);
+          container.innerHTML = `
+            <div class="p-12 text-center bg-white border border-[#E2E8F0] rounded-2xl text-[#B91C1C]">
+              Failed to load homework assignments. Please refresh the page.
+            </div>
+          `;
+        }
+      }
+
+      function toggleChapter(chapterId) {
+        openChapters[chapterId] = !openChapters[chapterId];
+        filterHomeworks();
+      }
+
+      function filterHomeworks() {
+        const query = document
+          .getElementById("searchInput")
+          .value.toLowerCase();
+        const sortBy = document.getElementById("sortSelect").value;
+
+        let filteredHomeworks = allHomeworks.filter((hw) => {
+          return (
+            hw.title.toLowerCase().includes(query) ||
+            (hw.instructions && hw.instructions.toLowerCase().includes(query))
+          );
+        });
+
+        filteredHomeworks.sort((a, b) => {
+          const dateA = a.deadline ? new Date(a.deadline) : 0;
+          const dateB = b.deadline ? new Date(b.deadline) : 0;
+
+          if (sortBy === "deadline-soon") {
+            return dateA - dateB;
+          } else if (sortBy === "deadline-late") {
+            return dateB - dateA;
+          } else if (sortBy === "title") {
+            return a.title.localeCompare(b.title);
+          }
+        });
+
+        renderChaptersAccordion(filteredHomeworks);
+      }
+
+      function setupNearestDeadlineCountdown() {
+        if (countdownInterval) clearInterval(countdownInterval);
+
+        const banner = document.getElementById("countdownBanner");
+        const now = new Date().getTime();
+        const upcoming = allHomeworks
+          .filter((hw) => hw.deadline && new Date(hw.deadline).getTime() > now)
+          .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+
+        if (upcoming.length === 0) {
+          banner.classList.add("hidden");
+          return;
+        }
+
+        banner.classList.remove("hidden");
+        const targetHW = upcoming[0];
+        const targetTime = new Date(targetHW.deadline).getTime();
+
+        document.getElementById("countdownTitle").textContent = targetHW.title;
+
+        function updateTimer() {
+          const currentTime = new Date().getTime();
+          const distance = targetTime - currentTime;
+
+          if (distance < 0) {
+            document.getElementById("cdDays").textContent = "00";
+            document.getElementById("cdHours").textContent = "00";
+            document.getElementById("cdMins").textContent = "00";
+            document.getElementById("cdSecs").textContent = "00";
+            clearInterval(countdownInterval);
+            return;
+          }
+
+          const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+          const hours = Math.floor(
+            (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+          );
+          const minutes = Math.floor(
+            (distance % (1000 * 60 * 60)) / (1000 * 60),
+          );
+          const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+          document.getElementById("cdDays").textContent = String(days).padStart(
+            2,
+            "0",
+          );
+          document.getElementById("cdHours").textContent = String(
+            hours,
+          ).padStart(2, "0");
+          document.getElementById("cdMins").textContent = String(
+            minutes,
+          ).padStart(2, "0");
+          document.getElementById("cdSecs").textContent = String(
+            seconds,
+          ).padStart(2, "0");
+        }
+
+        updateTimer();
+        countdownInterval = setInterval(updateTimer, 1000);
+      }
+
+      function renderChaptersAccordion(homeworks) {
+        const container = document.getElementById("chaptersContainer");
+        container.innerHTML = "";
+
+        if (allChapters.length === 0) {
+          container.innerHTML = `
+            <div class="bg-white border border-[#E2E8F0] rounded-2xl p-12 text-center shadow-sm">
+              <p class="text-sm font-medium text-[#64748B]">No chapters available.</p>
+            </div>
+          `;
+          return;
+        }
+
+        allChapters.forEach((chapter) => {
+          // Find homeworks belonging to this chapter (checking matching chapter_id or array of chapters)
+          const chapterHomeworks = homeworks.filter((hw) => {
+            if (hw.chapter_id && hw.chapter_id === chapter.id) return true;
+            if (hw.chapters && hw.chapters.some((c) => c.id === chapter.id))
+              return true;
+            return false;
+          });
+
+          const isOpen = openChapters[chapter.id];
+          const chevronClass = isOpen ? "rotate-180" : "";
+          const contentClass = isOpen ? "block" : "hidden";
+
+          let html = `
+            <div class="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm overflow-hidden transition-all">
+              <!-- Chapter Header -->
+              <button 
+                onclick="toggleChapter(${chapter.id})"
+                class="w-full px-6 py-4 flex items-center justify-between bg-white hover:bg-slate-50 transition-colors text-left"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-[#0D9488]/10 text-[#0D9488] flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 class="text-xl font-normal text-[#0F172A] tracking-tight">${chapter.title}</h2>
+                    <p class="text-xs text-[#64748B]">${chapterHomeworks.length} assignment${chapterHomeworks.length === 1 ? "" : "s"} available</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="text-xs font-semibold px-2.5 py-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-[#64748B]">
+                    ${chapterHomeworks.length} item${chapterHomeworks.length === 1 ? "" : "s"}
+                  </span>
+                  <svg class="w-5 h-5 text-[#64748B] transition-transform duration-200 ${chevronClass}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                  </svg>
+                </div>
+              </button>
+
+              <!-- Chapter Content / Dropdown Grid -->
+              <div class="${contentClass} px-6 pb-6 pt-2 border-t border-[#E2E8F0] bg-[#F8FAFC]/50">
+          `;
+
+          if (chapterHomeworks.length === 0) {
+            html += `
+              <div class="py-8 text-center text-sm text-[#64748B]">
+                No homework assignments assigned to this chapter yet.
+              </div>
+            `;
+          } else {
+            html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">`;
+
+            chapterHomeworks.forEach((hw) => {
+              const formattedDeadline = hw.deadline
+                ? new Date(hw.deadline).toLocaleString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })
+                : "No deadline specified";
+
+              let statusBadge = "";
+              const status = (hw.status || "not_submitted").toLowerCase();
+              if (status === "submitted") {
+                statusBadge = `<span class="px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold">Submitted</span>`;
+              } else if (status === "late") {
+                statusBadge = `<span class="px-3 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-semibold">Late</span>`;
+              } else {
+                statusBadge = `<span class="px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-semibold">Not Submitted</span>`;
+              }
+
+              html += `
+                <div class="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-6 group">
+                  <div>
+                    <div class="flex items-start justify-between gap-4 mb-3">
+                      <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-2xl bg-[#0D9488]/10 text-[#0D9488] flex items-center justify-center flex-shrink-0 group-hover:bg-[#0D9488] group-hover:text-white transition-colors">
+                          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 class="font-bold text-[#0F172A] text-lg leading-snug">${hw.title}</h3>
+                          <p class="text-xs text-[#64748B] mt-0.5">Deadline: ${formattedDeadline}</p>
+                        </div>
+                      </div>
+                      <div>${statusBadge}</div>
+                    </div>
+                    <p class="text-sm text-[#64748B] whitespace-pre-line">${hw.instructions || "No instructions provided."}</p>
+                    
+                    ${
+                      hw.admin_comment
+                        ? `
+                      <div class="mt-4 p-3 bg-teal-50 border border-teal-100 rounded-xl text-xs text-teal-900">
+                        <span class="font-bold block mb-0.5 text-teal-800">Instructor Comment:</span>
+                        ${hw.admin_comment}
+                      </div>
+                    `
+                        : ""
+                    }
+                  </div>
+
+                  <!-- Footer Actions -->
+                  <div class="pt-4 border-t border-[#E2E8F0] flex items-center justify-between">
+                    <span class="text-xs text-[#64748B] italic">Submissions managed by instructor</span>
+                    ${
+                      hw.attachment_url
+                        ? `
+                      <a href="${hw.attachment_url}" target="_blank" class="px-4 py-2 bg-[#F8FAFC] hover:bg-slate-100 border border-[#E2E8F0] text-[#0F172A] font-semibold rounded-xl text-xs transition-colors flex items-center gap-2">
+                        <svg class="w-4 h-4 text-[#64748B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        View Attachment
+                      </a>
+                    `
+                        : `
+                      <span class="text-xs text-[#64748B]">No attachments</span>
+                    `
+                    }
+                  </div>
+                </div>
+              `;
+            });
+
+            html += `</div>`;
+          }
+
+          html += `
+              </div>
+            </div>
+          `;
+
+          container.innerHTML += html;
+        });
+      }
+    </script>
+  </body>
+</html>

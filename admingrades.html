@@ -1,0 +1,945 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manage Exams & Grades — Portal Administration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  </head>
+  <body class="bg-[#F8FAFC] text-[#0F172A] font-sans min-h-screen flex">
+    <!-- Sidebar Container -->
+    <aside
+      id="sidebarContainer"
+      class="hidden md:flex flex-col shrink-0 h-screen sticky top-0"
+    ></aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto">    <!-- Mobile burger button (shown only on mobile) -->
+    <div class="md:hidden sticky top-0 z-30 bg-white border-b border-[#E2E8F0] px-4 py-3 flex items-center gap-3 shadow-sm">
+      <button
+        onclick="if(typeof openMobileSidebar==='function')openMobileSidebar();"
+        class="p-2 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[#0F172A] hover:bg-slate-100 transition-colors flex-shrink-0"
+        aria-label="Open menu"
+      >
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <span class="font-bold text-[#0F172A] text-base tracking-tight" style="font-family:'Urbanist',sans-serif;">MyPortal</span>
+    </div>      <div class="p-6 md:p-10">
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6"
+      >
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-[#0F172A]">
+            Manage Exams & Grades
+          </h1>
+          <p class="text-sm text-[#64748B]">
+            Create quizzes and mocks, schedule timing, link chapters, configure
+            custom grade thresholds, and grade students.
+          </p>
+        </div>
+        <div>
+          <button
+            onclick="openAddModal()"
+            class="px-4 py-2.5 bg-[#0D9488] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm transition-all shadow-sm flex items-center gap-2"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Create Exam
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters Bar -->
+      <div
+        class="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-sm mb-6 flex flex-col sm:flex-row items-center justify-between gap-4"
+      >
+        <div class="relative w-full sm:w-80">
+          <svg
+            class="absolute left-3.5 top-3 w-4 h-4 text-[#64748B]"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          <input
+            type="text"
+            id="searchInput"
+            oninput="renderExams()"
+            placeholder="Search exam title or type..."
+            class="w-full pl-10 pr-4 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488] text-[#0F172A]"
+          />
+        </div>
+      </div>
+
+      <!-- Exams List Container -->
+      <div id="examsContainer" class="space-y-6">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+    </main>
+
+    <!-- Create / Edit Exam Modal -->
+    <div
+      id="examModal"
+      class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4"
+    >
+      <div
+        class="bg-white rounded-2xl p-6 sm:p-8 max-w-lg w-full shadow-xl border border-[#E2E8F0] max-h-[90vh] overflow-y-auto"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <h2 id="modalTitle" class="text-lg font-bold text-[#0F172A]">
+            Create New Exam
+          </h2>
+          <button
+            onclick="closeModal()"
+            class="text-[#64748B] hover:text-[#0F172A]"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <form
+          id="examForm"
+          onsubmit="handleFormSubmit(event)"
+          class="space-y-4"
+        >
+          <input type="hidden" id="examId" />
+          <div>
+            <label
+              class="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5"
+              >Exam Title</label
+            >
+            <input
+              type="text"
+              id="examTitleInput"
+              required
+              placeholder="e.g. Physics Midterm Quiz"
+              class="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488]"
+            />
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label
+                class="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5"
+                >Exam Type</label
+              >
+              <select
+                id="examTypeInput"
+                class="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488] text-[#0F172A]"
+              >
+                <option value="quiz">Quiz</option>
+                <option value="mock">Mock Exam</option>
+              </select>
+            </div>
+            <div>
+              <label
+                class="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5"
+                >Total Grade / Max Score</label
+              >
+              <input
+                type="number"
+                id="examTotalGradeInput"
+                required
+                min="1"
+                value="100"
+                class="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488]"
+              />
+            </div>
+          </div>
+
+          <!-- Exam Schedule & Timing Fields -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label
+                class="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5"
+                >Exam Date</label
+              >
+              <input
+                type="date"
+                id="examDateInput"
+                class="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488]"
+              />
+            </div>
+            <div>
+              <label
+                class="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5"
+                >Start Time</label
+              >
+              <input
+                type="time"
+                id="examTimeInput"
+                class="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488]"
+              />
+            </div>
+            <div>
+              <label
+                class="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5"
+                >Duration (Mins)</label
+              >
+              <input
+                type="number"
+                id="examDurationInput"
+                min="1"
+                placeholder="e.g. 60"
+                class="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488]"
+              />
+            </div>
+          </div>
+
+          <!-- Associated Chapters Multi-Select -->
+          <div>
+            <label
+              class="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5"
+              >Associated Chapters (Select one or more)</label
+            >
+            <div
+              id="chaptersCheckboxContainer"
+              class="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl max-h-40 overflow-y-auto space-y-2"
+            >
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Grade Thresholds Distribution -->
+          <div
+            class="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl space-y-3"
+          >
+            <label
+              class="block text-xs font-bold text-[#0D9488] uppercase tracking-wider"
+              >Grade Thresholds (Minimum score required)</label
+            >
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div>
+                <span class="text-xs font-semibold text-[#64748B]"
+                  >Grade A Min:</span
+                >
+                <input
+                  type="number"
+                  id="threshA"
+                  value="85"
+                  class="w-full mt-1 px-3 py-2 bg-white border border-[#E2E8F0] rounded-lg text-sm"
+                />
+              </div>
+              <div>
+                <span class="text-xs font-semibold text-[#64748B]"
+                  >Grade B Min:</span
+                >
+                <input
+                  type="number"
+                  id="threshB"
+                  value="70"
+                  class="w-full mt-1 px-3 py-2 bg-white border border-[#E2E8F0] rounded-lg text-sm"
+                />
+              </div>
+              <div>
+                <span class="text-xs font-semibold text-[#64748B]"
+                  >Grade C Min:</span
+                >
+                <input
+                  type="number"
+                  id="threshC"
+                  value="55"
+                  class="w-full mt-1 px-3 py-2 bg-white border border-[#E2E8F0] rounded-lg text-sm"
+                />
+              </div>
+              <div>
+                <span class="text-xs font-semibold text-[#64748B]"
+                  >Grade D Min:</span
+                >
+                <input
+                  type="number"
+                  id="threshD"
+                  value="40"
+                  class="w-full mt-1 px-3 py-2 bg-white border border-[#E2E8F0] rounded-lg text-sm"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onclick="closeModal()"
+              class="px-4 py-2 text-sm font-semibold text-[#64748B] hover:bg-slate-100 rounded-xl transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              id="saveBtn"
+              class="px-5 py-2.5 bg-[#0D9488] hover:bg-[#059669] text-white text-sm font-semibold rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 min-w-[110px]"
+            >
+              <span id="saveBtnText">Save</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div
+      id="deleteModal"
+      class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4"
+    >
+      <div
+        class="bg-white rounded-2xl p-6 sm:p-8 max-w-sm w-full shadow-xl border border-[#E2E8F0] text-center"
+      >
+        <div
+          class="w-12 h-12 bg-[#FEF2F2] text-[#B91C1C] rounded-full flex items-center justify-center mx-auto mb-4"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+        </div>
+        <h2 class="text-lg font-bold text-[#0F172A] mb-2">Delete Exam</h2>
+        <p class="text-sm text-[#64748B] mb-6">
+          Are you sure you want to delete this exam? All student grade records
+          and thresholds will be removed.
+        </p>
+        <input type="hidden" id="deleteExamId" />
+        <div class="flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onclick="closeDeleteModal()"
+            class="flex-1 px-4 py-2.5 text-sm font-semibold text-[#64748B] hover:bg-slate-100 rounded-xl transition-colors border border-[#E2E8F0]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            id="confirmDeleteBtn"
+            onclick="confirmDeleteExam()"
+            class="flex-1 px-4 py-2.5 bg-[#B91C1C] hover:bg-[#991B1B] text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Unauthorized Access Modal -->
+    <div
+      id="unauthorizedModal"
+      class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50"
+    >
+      <div
+        class="bg-white rounded-2xl p-8 max-w-sm w-full mx-4 shadow-xl text-center border border-[#E2E8F0]"
+      >
+        <div
+          class="w-12 h-12 bg-[#FEF2F2] text-[#B91C1C] rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-xl"
+        >
+          !
+        </div>
+        <h2 class="text-lg font-bold text-[#0F172A] mb-2">
+          Unauthorized Access
+        </h2>
+        <p class="text-sm text-[#64748B] mb-6">
+          You do not have administrative privileges to view this page.
+        </p>
+        <button
+          onclick="window.location.href = 'dashboard.html'"
+          class="w-full py-2.5 bg-[#0F172A] hover:bg-slate-800 text-white font-semibold rounded-xl text-sm transition-colors"
+        >
+          Go to User Dashboard
+        </button>
+      </div>
+    </div>
+
+    <script>
+      let allExams = [];
+      let allChapters = [];
+      let openExams = new Set();
+
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (!user.full_name) {
+        window.location.href = "index.html";
+      } else if (!user.is_admin) {
+        document.getElementById("unauthorizedModal").classList.remove("hidden");
+        document.getElementById("unauthorizedModal").classList.add("flex");
+      } else {
+        fetchExamsData();
+      }
+
+      // Fixed: Fetch adminsidebar.html and pass matching active name "Exam Grades Control"
+      fetch("adminsidebar.html")
+        .then((res) => res.text())
+        .then((html) => {
+          const container = document.getElementById("sidebarContainer");
+          container.innerHTML = html;
+          const scripts = container.querySelectorAll("script");
+          scripts.forEach((script) => {
+            const newScript = document.createElement("script");
+            newScript.textContent = script.textContent;
+            document.body.appendChild(newScript);
+          });
+          if (typeof renderSidebar === "function") {
+            renderSidebar("Exam Grades Control");
+          }
+        });
+
+      async function fetchExamsData() {
+        const container = document.getElementById("examsContainer");
+        container.innerHTML = `
+          <div class="py-12 text-center bg-white border border-[#E2E8F0] rounded-2xl">
+            <div class="flex flex-col items-center justify-center gap-3">
+              <div class="w-8 h-8 border-4 border-[#0D9488] border-t-transparent rounded-full animate-spin"></div>
+              <p class="text-sm font-medium text-[#64748B]">Loading exams and grades...</p>
+            </div>
+          </div>
+        `;
+
+        try {
+          const res = await fetch("/api/exams");
+          const data = await res.json();
+          allExams = data.exams || [];
+          allChapters = data.chapters || [];
+          renderExams();
+        } catch (err) {
+          console.error("Failed to load exams", err);
+          container.innerHTML = `
+            <div class="p-8 text-center bg-white border border-[#E2E8F0] rounded-2xl text-[#B91C1C]">
+              Failed to load exams. Please try again.
+            </div>
+          `;
+        }
+      }
+
+      function toggleExam(id) {
+        if (openExams.has(id)) {
+          openExams.delete(id);
+        } else {
+          openExams.add(id);
+        }
+        renderExams();
+      }
+
+      function renderChaptersCheckboxes(selectedIds = []) {
+        const container = document.getElementById("chaptersCheckboxContainer");
+        if (!allChapters || allChapters.length === 0) {
+          container.innerHTML = `<p class="text-xs text-[#64748B]">No chapters found in the database.</p>`;
+          return;
+        }
+
+        container.innerHTML = allChapters
+          .map((ch) => {
+            const isChecked = selectedIds.includes(ch.id) ? "checked" : "";
+            return `
+            <label class="flex items-center gap-2.5 text-sm text-[#0F172A] cursor-pointer select-none">
+              <input type="checkbox" name="chapterCheckbox" value="${ch.id}" ${isChecked} class="w-4 h-4 text-[#0D9488] border-[#E2E8F0] rounded focus:ring-[#0D9488]" />
+              <span>${ch.title}</span>
+            </label>
+          `;
+          })
+          .join("");
+      }
+
+      function renderExams() {
+        const container = document.getElementById("examsContainer");
+        const query = document
+          .getElementById("searchInput")
+          .value.toLowerCase();
+
+        const filtered = allExams.filter((exam) => {
+          const matchesTitle = exam.title.toLowerCase().includes(query);
+          const matchesType = exam.type.toLowerCase().includes(query);
+          return matchesTitle || matchesType;
+        });
+
+        if (filtered.length === 0) {
+          container.innerHTML = `
+            <div class="bg-white border border-[#E2E8F0] rounded-2xl p-12 text-center shadow-sm">
+              <p class="text-sm font-medium text-[#64748B]">No exams found.</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = filtered
+          .map((exam) => {
+            const isOpen = openExams.has(exam.id);
+            const chevronRotation = isOpen ? "transform rotate-180" : "";
+            const typeBadge =
+              exam.type === "quiz"
+                ? `<span class="px-2.5 py-0.5 text-xs font-semibold bg-teal-50 text-teal-700 rounded-md">Quiz</span>`
+                : `<span class="px-2.5 py-0.5 text-xs font-semibold bg-purple-50 text-purple-700 rounded-md">Mock Exam</span>`;
+
+            const examDateFormatted = exam.exam_date
+              ? new Date(exam.exam_date).toLocaleDateString()
+              : null;
+            const timingInfo =
+              examDateFormatted || exam.exam_time || exam.duration_minutes
+                ? `<span class="text-xs text-[#0D9488] bg-[#F0FDFA] px-2.5 py-0.5 rounded-md font-medium inline-flex items-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>${examDateFormatted || "Date TBD"} ${exam.exam_time ? `at ${exam.exam_time}` : ""} ${exam.duration_minutes ? `(${exam.duration_minutes} mins)` : ""}</span>`
+                : `<span class="text-xs text-[#64748B] italic">Timing not set</span>`;
+
+            const chaptersBadges =
+              exam.chapters && exam.chapters.length > 0
+                ? exam.chapters
+                    .map(
+                      (c) =>
+                        `<span class="px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-700 rounded-md border border-[#E2E8F0]">${c.title}</span>`,
+                    )
+                    .join("")
+                : `<span class="text-xs text-[#64748B] italic">No chapters linked</span>`;
+
+            const thresholdsDisplay =
+              exam.thresholds && exam.thresholds.length > 0
+                ? exam.thresholds
+                    .map((t) => `${t.grade_letter} ≥ ${t.min_score}`)
+                    .join(" | ")
+                : "No thresholds set";
+
+            let studentsRows = "";
+            if (!exam.students || exam.students.length === 0) {
+              studentsRows = `<tr><td colspan="6" class="py-6 text-center text-xs text-[#64748B]">No students registered in the system.</td></tr>`;
+            } else {
+              studentsRows = exam.students
+                .map((st) => {
+                  const numericVal =
+                    st.numeric_grade !== null && st.numeric_grade !== undefined
+                      ? st.numeric_grade
+                      : "";
+                  const letterVal = st.letter_grade || "-";
+                  const commentVal = st.comment || "";
+
+                  let badgeColor =
+                    "bg-slate-100 text-slate-700 border-slate-200";
+                  if (letterVal === "A")
+                    badgeColor =
+                      "bg-emerald-50 text-emerald-700 border-emerald-200";
+                  else if (letterVal === "B")
+                    badgeColor = "bg-teal-50 text-teal-700 border-teal-200";
+                  else if (letterVal === "C")
+                    badgeColor = "bg-amber-50 text-amber-700 border-amber-200";
+                  else if (letterVal === "D")
+                    badgeColor =
+                      "bg-orange-50 text-orange-700 border-orange-200";
+                  else if (letterVal === "F")
+                    badgeColor = "bg-red-50 text-red-700 border-red-200";
+
+                  return `
+                <tr class="hover:bg-slate-50 transition-colors">
+                  <td class="py-3 px-4 font-semibold text-[#0F172A]">${st.full_name}</td>
+                  <td class="py-3 px-4 text-sm text-[#64748B]">${st.school_name || "—"}</td>
+                  <td class="py-3 px-4">
+                    <div class="flex items-center gap-3">
+                      <input 
+                        type="number" 
+                        max="${exam.total_grade}" 
+                        min="0" 
+                        step="any"
+                        id="score_${exam.id}_${st.user_id}" 
+                        value="${numericVal}" 
+                        oninput="calculateLiveLetter(${exam.id}, ${st.user_id}, ${JSON.stringify(exam.thresholds)})" 
+                        class="w-28 px-3 py-1.5 bg-white border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488]" 
+                      />
+                      <span class="text-xs text-[#64748B]">/ ${exam.total_grade}</span>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span id="letter_${exam.id}_${st.user_id}" class="px-2.5 py-1 font-bold rounded-lg text-xs border ${badgeColor}">${letterVal}</span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <input 
+                      type="text" 
+                      id="comment_${exam.id}_${st.user_id}" 
+                      value="${commentVal}" 
+                      placeholder="Add comment..." 
+                      class="w-full px-3 py-1.5 bg-white border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488]" 
+                    />
+                  </td>
+                  <td class="py-3 px-4 text-right">
+                    <button 
+                      type="button" 
+                      id="saveBtn_${exam.id}_${st.user_id}"
+                      onclick="saveStudentGrade(${exam.id}, ${st.user_id})"
+                      class="px-3.5 py-1.5 bg-[#0D9488] hover:bg-[#059669] text-white font-semibold rounded-xl text-xs transition-colors shadow-sm inline-flex items-center justify-center min-w-[65px]"
+                    >
+                      Save
+                    </button>
+                  </td>
+                </tr>
+              `;
+                })
+                .join("");
+            }
+
+            return `
+            <div class="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm overflow-hidden transition-all">
+              <!-- Accordion Header -->
+              <div 
+                onclick="toggleExam(${exam.id})"
+                class="p-6 border-b border-[#E2E8F0] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#F8FAFC]/50 hover:bg-[#F1F5F9]/60 cursor-pointer select-none"
+              >
+                <div class="flex items-start gap-3 w-full md:w-auto">
+                  <div class="mt-1 text-[#64748B] transition-transform duration-200 ${chevronRotation}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2 mb-2 flex-wrap">
+                      ${typeBadge}
+                      <span class="text-xs text-[#64748B] font-medium">Total Grade: <strong class="text-[#0F172A]">${exam.total_grade}</strong></span>
+                      ${timingInfo}
+                      <span class="text-xs font-semibold text-[#0D9488] bg-[#F0FDFA] px-2.5 py-0.5 rounded-md">Scale: ${thresholdsDisplay}</span>
+                    </div>
+                    <h3 class="text-base font-bold text-[#0F172A] mb-2">${exam.title}</h3>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span class="text-xs text-[#64748B] font-medium mr-1">Chapters:</span>
+                      ${chaptersBadges}
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 self-end md:self-center" onclick="event.stopPropagation()">
+                  <button type="button" onclick="openEditModal(${exam.id})" class="px-3 py-1.5 text-xs font-semibold text-[#64748B] hover:text-[#0D9488] hover:bg-slate-100 rounded-lg transition-colors border border-[#E2E8F0]">Edit</button>
+                  <button type="button" onclick="openDeleteModal(${exam.id})" class="px-3 py-1.5 text-xs font-semibold text-[#B91C1C] hover:bg-[#FEF2F2] rounded-lg transition-colors border border-[#E2E8F0]">Delete</button>
+                </div>
+              </div>
+
+              <!-- Collapsible Students Grading Table -->
+              <div class="${isOpen ? "block" : "hidden"} overflow-x-auto border-t border-[#E2E8F0]">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-slate-50 border-b border-[#E2E8F0] text-xs font-bold text-[#64748B] uppercase tracking-wider">
+                      <th class="py-3 px-4">Student Name</th>
+                      <th class="py-3 px-4">School</th>
+                      <th class="py-3 px-4">Numeric Score</th>
+                      <th class="py-3 px-4">Letter</th>
+                      <th class="py-3 px-4">Comment</th>
+                      <th class="py-3 px-4 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-[#E2E8F0] text-sm">
+                    ${studentsRows}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+          })
+          .join("");
+      }
+
+      function calculateLiveLetter(examId, userId, thresholds) {
+        const valStr = document.getElementById(
+          `score_${examId}_${userId}`,
+        ).value;
+        const badge = document.getElementById(`letter_${examId}_${userId}`);
+        if (valStr === "" || isNaN(valStr)) {
+          badge.textContent = "-";
+          badge.className =
+            "px-2.5 py-1 font-bold rounded-lg text-xs border bg-slate-100 text-slate-700 border-slate-200";
+          return;
+        }
+
+        const val = parseFloat(valStr);
+        let assigned = "F";
+        for (let t of thresholds) {
+          if (val >= parseFloat(t.min_score)) {
+            assigned = t.grade_letter;
+            break;
+          }
+        }
+
+        badge.textContent = assigned;
+        let badgeColor = "bg-slate-100 text-slate-700 border-slate-200";
+        if (assigned === "A")
+          badgeColor = "bg-emerald-50 text-emerald-700 border-emerald-200";
+        else if (assigned === "B")
+          badgeColor = "bg-teal-50 text-teal-700 border-teal-200";
+        else if (assigned === "C")
+          badgeColor = "bg-amber-50 text-amber-700 border-amber-200";
+        else if (assigned === "D")
+          badgeColor = "bg-orange-50 text-orange-700 border-orange-200";
+        else if (assigned === "F")
+          badgeColor = "bg-red-50 text-red-700 border-red-200";
+        badge.className = `px-2.5 py-1 font-bold rounded-lg text-xs border ${badgeColor}`;
+      }
+
+      async function saveStudentGrade(examId, userId) {
+        const numericInput = document.getElementById(
+          `score_${examId}_${userId}`,
+        ).value;
+        const commentInput = document.getElementById(
+          `comment_${examId}_${userId}`,
+        ).value;
+        const numeric_grade =
+          numericInput !== "" ? parseFloat(numericInput) : null;
+
+        const saveBtn = document.getElementById(`saveBtn_${examId}_${userId}`);
+        if (saveBtn) {
+          saveBtn.disabled = true;
+          saveBtn.innerHTML = `
+            <svg class="w-3.5 h-3.5 animate-spin inline-block mr-1" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg> Saving...
+          `;
+        }
+
+        try {
+          const res = await fetch("/api/exams?action=update-grade", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              exam_id: examId,
+              student_id: userId,
+              numeric_grade,
+              comment: commentInput,
+            }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const exam = allExams.find((e) => e.id === examId);
+            if (exam) {
+              let stGrade = exam.students.find((s) => s.user_id === userId);
+              if (stGrade) {
+                stGrade.numeric_grade = numeric_grade;
+                stGrade.letter_grade = data.letter_grade;
+                stGrade.comment = commentInput;
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Error saving grade:", err);
+          alert("An error occurred while saving grade.");
+        } finally {
+          if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Save";
+          }
+        }
+      }
+
+      function openAddModal() {
+        document.getElementById("modalTitle").textContent = "Create New Exam";
+        document.getElementById("examId").value = "";
+        document.getElementById("examTitleInput").value = "";
+        document.getElementById("examTypeInput").value = "quiz";
+        document.getElementById("examTotalGradeInput").value = "100";
+        document.getElementById("examDateInput").value = "";
+        document.getElementById("examTimeInput").value = "";
+        document.getElementById("examDurationInput").value = "";
+        document.getElementById("threshA").value = "85";
+        document.getElementById("threshB").value = "70";
+        document.getElementById("threshC").value = "55";
+        document.getElementById("threshD").value = "40";
+        renderChaptersCheckboxes([]);
+        document.getElementById("examModal").classList.remove("hidden");
+        document.getElementById("examModal").classList.add("flex");
+      }
+
+      function openEditModal(id) {
+        const exam = allExams.find((e) => e.id === id);
+        if (!exam) return;
+
+        document.getElementById("modalTitle").textContent =
+          "Edit Exam & Thresholds";
+        document.getElementById("examId").value = exam.id;
+        document.getElementById("examTitleInput").value = exam.title;
+        document.getElementById("examTypeInput").value = exam.type;
+        document.getElementById("examTotalGradeInput").value = exam.total_grade;
+        document.getElementById("examDateInput").value = exam.exam_date
+          ? exam.exam_date.split("T")[0]
+          : "";
+        document.getElementById("examTimeInput").value = exam.exam_time || "";
+        document.getElementById("examDurationInput").value =
+          exam.duration_minutes || "";
+
+        const getThresh = (letter) => {
+          const found = exam.thresholds.find((t) => t.grade_letter === letter);
+          return found ? found.min_score : "";
+        };
+
+        document.getElementById("threshA").value = getThresh("A") || 85;
+        document.getElementById("threshB").value = getThresh("B") || 70;
+        document.getElementById("threshC").value = getThresh("C") || 55;
+        document.getElementById("threshD").value = getThresh("D") || 40;
+
+        renderChaptersCheckboxes(exam.chapter_ids || []);
+        document.getElementById("examModal").classList.remove("hidden");
+        document.getElementById("examModal").classList.add("flex");
+      }
+
+      function closeModal() {
+        document.getElementById("examModal").classList.remove("flex");
+        document.getElementById("examModal").classList.add("hidden");
+      }
+
+      function openDeleteModal(id) {
+        document.getElementById("deleteExamId").value = id;
+        document.getElementById("deleteModal").classList.remove("hidden");
+        document.getElementById("deleteModal").classList.add("flex");
+      }
+
+      function closeDeleteModal() {
+        document.getElementById("deleteModal").classList.remove("flex");
+        document.getElementById("deleteModal").classList.add("hidden");
+      }
+
+      async function confirmDeleteExam() {
+        const id = document.getElementById("deleteExamId").value;
+        if (!id) return;
+
+        const confirmBtn = document.getElementById("confirmDeleteBtn");
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Deleting...";
+
+        try {
+          const res = await fetch(`/api/exams?id=${id}`, { method: "DELETE" });
+          if (res.ok) {
+            closeDeleteModal();
+            fetchExamsData();
+          }
+        } catch (err) {
+          console.error("Error deleting exam:", err);
+          alert("An error occurred.");
+        } finally {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Delete";
+        }
+      }
+
+      async function handleFormSubmit(event) {
+        event.preventDefault();
+        const id = document.getElementById("examId").value;
+        const title = document.getElementById("examTitleInput").value;
+        const type = document.getElementById("examTypeInput").value;
+        const total_grade = parseFloat(
+          document.getElementById("examTotalGradeInput").value,
+        );
+        const exam_date =
+          document.getElementById("examDateInput").value || null;
+        const exam_time =
+          document.getElementById("examTimeInput").value || null;
+        const duration_minutes = document.getElementById("examDurationInput")
+          .value
+          ? parseInt(document.getElementById("examDurationInput").value)
+          : null;
+
+        const chapter_ids = Array.from(
+          document.querySelectorAll('input[name="chapterCheckbox"]:checked'),
+        ).map((cb) => parseInt(cb.value));
+
+        const thresholds = [
+          {
+            grade_letter: "A",
+            min_score: parseFloat(document.getElementById("threshA").value),
+          },
+          {
+            grade_letter: "B",
+            min_score: parseFloat(document.getElementById("threshB").value),
+          },
+          {
+            grade_letter: "C",
+            min_score: parseFloat(document.getElementById("threshC").value),
+          },
+          {
+            grade_letter: "D",
+            min_score: parseFloat(document.getElementById("threshD").value),
+          },
+          { grade_letter: "F", min_score: 0 },
+        ];
+
+        const saveBtn = document.getElementById("saveBtn");
+        const saveBtnText = document.getElementById("saveBtnText");
+
+        saveBtn.disabled = true;
+        saveBtnText.innerHTML = `
+          <svg class="w-4 h-4 animate-spin inline-block mr-1.5" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg> Saving...
+        `;
+
+        const method = id ? "PUT" : "POST";
+        const bodyData = id
+          ? {
+              id: parseInt(id),
+              title,
+              type,
+              total_grade,
+              exam_date,
+              exam_time,
+              duration_minutes,
+              thresholds,
+              chapter_ids,
+            }
+          : {
+              title,
+              type,
+              total_grade,
+              exam_date,
+              exam_time,
+              duration_minutes,
+              thresholds,
+              chapter_ids,
+            };
+
+        try {
+          const res = await fetch("/api/exams", {
+            method: method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(bodyData),
+          });
+
+          if (res.ok) {
+            closeModal();
+            fetchExamsData();
+          } else {
+            alert("Failed to save exam.");
+          }
+        } catch (err) {
+          console.error("Error saving exam:", err);
+          alert("An error occurred.");
+        } finally {
+          saveBtn.disabled = false;
+          saveBtnText.textContent = "Save";
+        }
+      }
+    </script>
+  </body>
+</html>

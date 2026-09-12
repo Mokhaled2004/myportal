@@ -1,0 +1,606 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Exams & Grades — Student Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  </head>
+  <body class="bg-[#F8FAFC] text-[#0F172A] font-sans min-h-screen flex">
+    <!-- Sidebar Container -->
+    <aside
+      id="sidebarContainer"
+      class="hidden md:flex flex-col shrink-0 h-screen sticky top-0"
+    ></aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto">    <!-- Mobile burger button (shown only on mobile) -->
+    <div class="md:hidden sticky top-0 z-30 bg-white border-b border-[#E2E8F0] px-4 py-3 flex items-center gap-3 shadow-sm">
+      <button
+        onclick="if(typeof openMobileSidebar==='function')openMobileSidebar();"
+        class="p-2 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[#0F172A] hover:bg-slate-100 transition-colors flex-shrink-0"
+        aria-label="Open menu"
+      >
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <span class="font-bold text-[#0F172A] text-base tracking-tight" style="font-family:'Urbanist',sans-serif;">MyPortal</span>
+    </div>      <div class="p-6 md:p-10">
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
+      >
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-[#0F172A]">
+            My Exams & Grades
+          </h1>
+          <p class="text-sm text-[#64748B]">
+            View your upcoming exam schedules, quizzes, mock results, and earned
+            grades by chapter.
+          </p>
+        </div>
+      </div>
+
+      <!-- Big Countdown Banner for Nearest Exam -->
+      <div
+        id="countdownBanner"
+        class="bg-gradient-to-r from-[#0D9488] to-[#0f766e] text-white rounded-3xl p-6 sm:p-8 shadow-md mb-8 relative overflow-hidden hidden"
+      >
+        <div
+          class="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"
+        ></div>
+        <div
+          class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6"
+        >
+          <div>
+            <div
+              class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-semibold mb-3"
+            >
+              <svg
+                class="w-3.5 h-3.5 animate-pulse"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Nearest Exam Countdown
+            </div>
+            <h2
+              id="countdownTitle"
+              class="text-xl sm:text-2xl font-bold tracking-tight"
+            >
+              Loading upcoming exam...
+            </h2>
+            <p
+              id="countdownSubtitle"
+              class="text-xs sm:text-sm text-teal-100 mt-1"
+            >
+              Prepare thoroughly and review your chapter materials before time
+              runs out.
+            </p>
+          </div>
+          <div
+            class="flex items-center gap-3 sm:gap-4 bg-black/20 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 self-start lg:self-auto"
+          >
+            <div class="text-center">
+              <span id="cdDays" class="text-2xl sm:text-3xl font-bold">00</span>
+              <span
+                class="block text-[10px] uppercase tracking-wider text-teal-200 font-medium"
+                >Days</span
+              >
+            </div>
+            <span class="text-xl font-bold text-teal-300">:</span>
+            <div class="text-center">
+              <span id="cdHours" class="text-2xl sm:text-3xl font-bold"
+                >00</span
+              >
+              <span
+                class="block text-[10px] uppercase tracking-wider text-teal-200 font-medium"
+                >Hours</span
+              >
+            </div>
+            <span class="text-xl font-bold text-teal-300">:</span>
+            <div class="text-center">
+              <span id="cdMins" class="text-2xl sm:text-3xl font-bold">00</span>
+              <span
+                class="block text-[10px] uppercase tracking-wider text-teal-200 font-medium"
+                >Mins</span
+              >
+            </div>
+            <span class="text-xl font-bold text-teal-300">:</span>
+            <div class="text-center">
+              <span id="cdSecs" class="text-2xl sm:text-3xl font-bold">00</span>
+              <span
+                class="block text-[10px] uppercase tracking-wider text-teal-200 font-medium"
+                >Secs</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters and Search Bar -->
+      <div
+        class="bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-6 shadow-sm mb-8 flex flex-col md:flex-row items-center justify-between gap-4"
+      >
+        <div class="relative w-full md:w-96">
+          <svg
+            class="absolute left-3.5 top-3.5 w-4 h-4 text-[#64748B]"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          <input
+            type="text"
+            id="searchInput"
+            oninput="filterExams()"
+            placeholder="Search exams by title or type..."
+            class="w-full pl-10 pr-4 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488] text-[#0F172A]"
+          />
+        </div>
+        <div
+          class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end"
+        >
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <label
+              class="text-xs font-semibold text-[#64748B] uppercase tracking-wider"
+              >Sort:</label
+            >
+            <div class="relative flex-1 sm:flex-none">
+              <select
+                id="sortSelect"
+                onchange="filterExams()"
+                class="w-full appearance-none pl-3 pr-9 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm font-medium text-[#0F172A] focus:outline-none focus:border-[#0D9488] hover:border-[#0D9488] transition-colors cursor-pointer"
+              >
+                <option value="date-soon">Exam Date: Soonest First</option>
+                <option value="date-late">Exam Date: Latest First</option>
+                <option value="title">Title (A-Z)</option>
+              </select>
+              <div
+                class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#64748B]"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chapters Accordion Container -->
+      <div id="chaptersContainer" class="space-y-4">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+    </main>
+
+    <script>
+      let allExams = [];
+      let allChapters = [];
+      let countdownInterval = null;
+      const openChapters = {};
+
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (!user.full_name) {
+        window.location.href = "index.html";
+      } else {
+        init();
+      }
+
+      // Load Sidebar component dynamically and initialize active state
+      fetch("sidebar.html")
+        .then((res) => res.text())
+        .then((html) => {
+          const container = document.getElementById("sidebarContainer");
+          container.innerHTML = html;
+          const scripts = container.querySelectorAll("script");
+          scripts.forEach((script) => {
+            const newScript = document.createElement("script");
+            newScript.textContent = script.textContent;
+            document.body.appendChild(newScript);
+          });
+          if (typeof renderSidebar === "function") {
+            renderSidebar("Exam Grades");
+          }
+        });
+
+      async function init() {
+        const container = document.getElementById("chaptersContainer");
+        container.innerHTML = `
+          <div class="py-20 flex flex-col items-center justify-center gap-3">
+            <div class="w-8 h-8 border-4 border-[#0D9488] border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-sm font-medium text-[#64748B]">Loading chapters and exams...</p>
+          </div>
+        `;
+
+        try {
+          const [chaptersRes, examsRes] = await Promise.all([
+            fetch("/api/chapters"),
+            fetch("/api/exams"),
+          ]);
+          allChapters = await chaptersRes.json();
+          const examsData = await examsRes.json();
+          allExams = examsData.exams || [];
+
+          allChapters.forEach((c) => {
+            if (openChapters[c.id] === undefined) {
+              openChapters[c.id] = true;
+            }
+          });
+
+          filterExams();
+          setupNearestExamCountdown();
+        } catch (err) {
+          console.error("Failed to load chapters or exams", err);
+          container.innerHTML = `
+            <div class="p-12 text-center bg-white border border-[#E2E8F0] rounded-2xl text-[#B91C1C]">
+              Failed to load exams and grades. Please refresh the page.
+            </div>
+          `;
+        }
+      }
+
+      function toggleChapter(chapterId) {
+        openChapters[chapterId] = !openChapters[chapterId];
+        filterExams();
+      }
+
+      // Robust helper to parse exam date and time using local timezone without shifts
+      function getExamTimestamp(exam) {
+        if (!exam.exam_date) return 0;
+        const datePart = exam.exam_date.split("T")[0];
+        const parts = datePart.split("-");
+        if (parts.length !== 3) return new Date(exam.exam_date).getTime();
+
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+
+        let hours = 0,
+          minutes = 0,
+          seconds = 0;
+        if (exam.exam_time) {
+          const timeParts = exam.exam_time.split(":");
+          if (timeParts.length >= 2) {
+            hours = parseInt(timeParts[0], 10);
+            minutes = parseInt(timeParts[1], 10);
+            seconds = timeParts[2] ? parseInt(timeParts[2], 10) : 0;
+          }
+        }
+        return new Date(year, month, day, hours, minutes, seconds).getTime();
+      }
+
+      function filterExams() {
+        const query = document
+          .getElementById("searchInput")
+          .value.toLowerCase();
+        const sortBy = document.getElementById("sortSelect").value;
+
+        let filteredExams = allExams.filter((exam) => {
+          return (
+            exam.title.toLowerCase().includes(query) ||
+            exam.type.toLowerCase().includes(query)
+          );
+        });
+
+        filteredExams.sort((a, b) => {
+          const dateA = getExamTimestamp(a);
+          const dateB = getExamTimestamp(b);
+
+          if (sortBy === "date-soon") {
+            return dateA - dateB;
+          } else if (sortBy === "date-late") {
+            return dateB - dateA;
+          } else if (sortBy === "title") {
+            return a.title.localeCompare(b.title);
+          }
+        });
+
+        renderChaptersAccordion(filteredExams);
+      }
+
+      function setupNearestExamCountdown() {
+        if (countdownInterval) clearInterval(countdownInterval);
+
+        const banner = document.getElementById("countdownBanner");
+        const now = new Date().getTime();
+
+        const upcoming = allExams
+          .filter((exam) => {
+            const t = getExamTimestamp(exam);
+            return t && t > now;
+          })
+          .sort((a, b) => getExamTimestamp(a) - getExamTimestamp(b));
+
+        if (upcoming.length === 0) {
+          banner.classList.add("hidden");
+          return;
+        }
+
+        banner.classList.remove("hidden");
+        const targetExam = upcoming[0];
+        const targetTime = getExamTimestamp(targetExam);
+
+        document.getElementById("countdownTitle").textContent =
+          targetExam.title;
+
+        function updateTimer() {
+          const currentTime = new Date().getTime();
+          const distance = targetTime - currentTime;
+
+          if (distance < 0) {
+            document.getElementById("cdDays").textContent = "00";
+            document.getElementById("cdHours").textContent = "00";
+            document.getElementById("cdMins").textContent = "00";
+            document.getElementById("cdSecs").textContent = "00";
+            clearInterval(countdownInterval);
+            return;
+          }
+
+          const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+          const hours = Math.floor(
+            (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+          );
+          const minutes = Math.floor(
+            (distance % (1000 * 60 * 60)) / (1000 * 60),
+          );
+          const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+          document.getElementById("cdDays").textContent = String(days).padStart(
+            2,
+            "0",
+          );
+          document.getElementById("cdHours").textContent = String(
+            hours,
+          ).padStart(2, "0");
+          document.getElementById("cdMins").textContent = String(
+            minutes,
+          ).padStart(2, "0");
+          document.getElementById("cdSecs").textContent = String(
+            seconds,
+          ).padStart(2, "0");
+        }
+
+        updateTimer();
+        countdownInterval = setInterval(updateTimer, 1000);
+      }
+
+      function renderChaptersAccordion(exams) {
+        const container = document.getElementById("chaptersContainer");
+        container.innerHTML = "";
+
+        if (allChapters.length === 0) {
+          container.innerHTML = `
+            <div class="bg-white border border-[#E2E8F0] rounded-2xl p-12 text-center shadow-sm">
+              <p class="text-sm font-medium text-[#64748B]">No chapters available.</p>
+            </div>
+          `;
+          return;
+        }
+
+        allChapters.forEach((chapter) => {
+          const chapterExams = exams.filter((exam) => {
+            if (exam.chapter_id && exam.chapter_id === chapter.id) return true;
+            if (exam.chapters && exam.chapters.some((c) => c.id === chapter.id))
+              return true;
+            return false;
+          });
+
+          const isOpen = openChapters[chapter.id];
+          const chevronClass = isOpen ? "rotate-180" : "";
+          const contentClass = isOpen ? "block" : "hidden";
+
+          let html = `
+            <div class="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm overflow-hidden transition-all">
+              <!-- Chapter Header -->
+              <button 
+                onclick="toggleChapter(${chapter.id})"
+                class="w-full px-6 py-4 flex items-center justify-between bg-white hover:bg-slate-50 transition-colors text-left"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-[#0D9488]/10 text-[#0D9488] flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 class="text-xl font-normal text-[#0F172A] tracking-tight">${chapter.title}</h2>
+                    <p class="text-xs text-[#64748B]">${chapterExams.length} exam${chapterExams.length === 1 ? "" : "s"} available</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="text-xs font-semibold px-2.5 py-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-[#64748B]">
+                    ${chapterExams.length} item${chapterExams.length === 1 ? "" : "s"}
+                  </span>
+                  <svg class="w-5 h-5 text-[#64748B] transition-transform duration-200 ${chevronClass}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                  </svg>
+                </div>
+              </button>
+
+              <!-- Chapter Content Grid -->
+              <div class="${contentClass} px-6 pb-6 pt-2 border-t border-[#E2E8F0] bg-[#F8FAFC]/50">
+          `;
+
+          if (chapterExams.length === 0) {
+            html += `
+              <div class="py-8 text-center text-sm text-[#64748B]">
+                No exams or quizzes assigned to this chapter yet.
+              </div>
+            `;
+          } else {
+            html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">`;
+
+            chapterExams.forEach((exam) => {
+              const typeBadge =
+                exam.type === "quiz"
+                  ? `<span class="px-3 py-1 bg-teal-50 text-teal-700 border border-teal-200 rounded-lg text-xs font-semibold">Quiz</span>`
+                  : `<span class="px-3 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-semibold">Mock Exam</span>`;
+
+              let examDateFormatted = "Date TBD";
+              if (exam.exam_date) {
+                const parts = exam.exam_date.split("T")[0].split("-");
+                if (parts.length === 3) {
+                  const year = parseInt(parts[0], 10);
+                  const month = parseInt(parts[1], 10) - 1;
+                  const day = parseInt(parts[2], 10);
+                  const localDate = new Date(year, month, day);
+                  examDateFormatted = localDate.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  });
+                } else {
+                  examDateFormatted = new Date(
+                    exam.exam_date,
+                  ).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  });
+                }
+              }
+
+              let formattedTime = "";
+              if (exam.exam_time) {
+                const timeParts = exam.exam_time.split(":");
+                if (timeParts.length >= 2) {
+                  let hours = parseInt(timeParts[0], 10);
+                  const minutes = timeParts[1];
+                  const ampm = hours >= 12 ? "PM" : "AM";
+                  hours = hours % 12;
+                  hours = hours ? hours : 12;
+                  formattedTime = `${hours}:${minutes} ${ampm}`;
+                } else {
+                  formattedTime = exam.exam_time;
+                }
+              }
+
+              const myRecord =
+                exam.students?.find((s) => s.user_id === user.id) || {};
+              const numericScore =
+                myRecord.numeric_grade !== null &&
+                myRecord.numeric_grade !== undefined
+                  ? myRecord.numeric_grade
+                  : "—";
+              const letterGrade = myRecord.letter_grade || "—";
+              const comment = myRecord.comment || "No feedback yet.";
+
+              let badgeColor = "bg-slate-100 text-slate-700 border-slate-200";
+              if (letterGrade === "A")
+                badgeColor =
+                  "bg-emerald-50 text-emerald-700 border-emerald-200";
+              else if (letterGrade === "B")
+                badgeColor = "bg-teal-50 text-teal-700 border-teal-200";
+              else if (letterGrade === "C")
+                badgeColor = "bg-amber-50 text-amber-700 border-amber-200";
+              else if (letterGrade === "D")
+                badgeColor = "bg-orange-50 text-orange-700 border-orange-200";
+              else if (letterGrade === "F")
+                badgeColor = "bg-red-50 text-red-700 border-red-200";
+
+              html += `
+                <div class="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-6 group">
+                  <div class="space-y-4">
+                    <div class="flex items-start justify-between gap-4">
+                      <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-2xl bg-[#0D9488]/10 text-[#0D9488] flex items-center justify-center flex-shrink-0 group-hover:bg-[#0D9488] group-hover:text-white transition-colors">
+                          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012-2m-6 9l2 2 4-4"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 class="font-bold text-[#0F172A] text-lg leading-snug">${exam.title}</h3>
+                          <div class="flex items-center gap-1.5 text-xs text-[#64748B] mt-1">
+                            <svg class="w-3.5 h-3.5 text-[#0D9488]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <span>${examDateFormatted}</span>
+                            ${formattedTime ? `<span class="text-[#CBD5E1]">•</span><span>${formattedTime}</span>` : ""}
+                          </div>
+                        </div>
+                      </div>
+                      <div>${typeBadge}</div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3 bg-[#F8FAFC] p-3.5 rounded-xl border border-[#E2E8F0] text-xs text-[#64748B]">
+                      <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-[#0D9488]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div>
+                          <span class="block text-[10px] uppercase tracking-wider font-bold">Duration</span>
+                          <span class="text-[#0F172A] font-medium">${exam.duration_minutes ? `${exam.duration_minutes} mins` : "Not specified"}</span>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-[#0D9488]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <div>
+                          <span class="block text-[10px] uppercase tracking-wider font-bold">Max Score</span>
+                          <span class="text-[#0F172A] font-medium">${exam.total_grade} pts</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="text-xs text-[#64748B]">
+                      <p>Instructor Feedback: <span class="italic text-[#0F172A]">${comment}</span></p>
+                    </div>
+                  </div>
+
+                  <!-- Score / Grade Display Footer -->
+                  <div class="pt-4 border-t border-[#E2E8F0] flex items-center justify-between bg-[#F8FAFC] p-4 rounded-xl border border-[#E2E8F0]">
+                    <div>
+                      <span class="block text-[10px] uppercase tracking-wider font-bold text-[#64748B]">Your Score</span>
+                      <span class="text-lg font-bold text-[#0F172A]">${numericScore} <span class="text-xs text-[#64748B] font-normal">/ ${exam.total_grade}</span></span>
+                    </div>
+                    <div class="text-center">
+                      <span class="block text-[10px] uppercase tracking-wider font-bold text-[#64748B] mb-1">Grade</span>
+                      <span class="px-3 py-1 font-bold rounded-lg text-sm border ${badgeColor} inline-block">${letterGrade}</span>
+                    </div>
+                  </div>
+                </div>
+              `;
+            });
+
+            html += `</div>`;
+          }
+
+          html += `
+              </div>
+            </div>
+          `;
+
+          container.innerHTML += html;
+        });
+      }
+    </script>
+  </body>
+</html>

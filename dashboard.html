@@ -1,0 +1,492 @@
+<!-- dashboard.html -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Dashboard — Student Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  </head>
+  <body class="bg-[#F8FAFC] text-[#0F172A] font-sans min-h-screen flex">
+    <!-- Sidebar Container -->
+    <aside
+      id="sidebarContainer"
+      class="hidden md:flex flex-col shrink-0 h-screen sticky top-0"
+    ></aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto">
+      <!-- Mobile burger button (shown only on mobile) -->
+      <div
+        class="md:hidden sticky top-0 z-30 bg-white border-b border-[#E2E8F0] px-4 py-3 flex items-center gap-3 shadow-sm"
+      >
+        <button
+          onclick="
+            if (typeof openMobileSidebar === 'function') openMobileSidebar();
+          "
+          class="p-2 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[#0F172A] hover:bg-slate-100 transition-colors flex-shrink-0"
+          aria-label="Open menu"
+        >
+          <svg
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+        </button>
+        <span
+          class="font-bold text-[#0F172A] text-base tracking-tight"
+          style="font-family: &quot;Urbanist&quot;, sans-serif"
+          >MyPortal</span
+        >
+      </div>
+      <div class="p-6 md:p-10">
+        <!-- Top Welcome & Exam Countdown Bar -->
+        <div
+          class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8"
+        >
+          <div>
+            <h1
+              id="welcomeTitle"
+              class="text-2xl font-bold tracking-tight text-[#0F172A]"
+            >
+              Welcome back!
+            </h1>
+            <p class="text-sm text-[#64748B]">
+              Here is an overview of your latest academic progress, recent
+              uploads, and class standing.
+            </p>
+          </div>
+          <!-- Final Exam Countdown Badge -->
+          <div
+            id="examCountdownBadge"
+            class="flex items-center gap-3 px-4 py-2.5 bg-white border border-[#E2E8F0] rounded-2xl shadow-sm text-sm font-medium text-[#0F172A]"
+          >
+            <div
+              class="w-8 h-8 rounded-xl bg-teal-50 text-[#0D9488] flex items-center justify-center flex-shrink-0"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <div>
+              <span class="block text-[10px] uppercase font-bold text-[#64748B]"
+                >Final Exam Countdown</span
+              >
+              <span
+                id="countdownTimerText"
+                class="text-xs font-bold text-[#0D9488]"
+                >Loading countdown...</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Motivational / Achievement Banner -->
+        <div
+          id="motivationBanner"
+          class="bg-gradient-to-r from-[#0D9488] to-[#0f766e] text-white rounded-3xl p-6 sm:p-8 shadow-md mb-8 relative overflow-hidden"
+        >
+          <div
+            class="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"
+          ></div>
+          <div
+            class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6"
+          >
+            <div>
+              <div
+                id="bannerTag"
+                class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-semibold mb-3"
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+                Student Motivation & Standing
+              </div>
+              <h2
+                id="bannerHeading"
+                class="text-xl sm:text-2xl font-bold tracking-tight"
+              >
+                Loading your standing...
+              </h2>
+              <p
+                id="bannerText"
+                class="text-xs sm:text-sm text-teal-100 mt-1 max-w-2xl"
+              >
+                Keep pushing forward! Every assignment and exam brings you
+                closer to mastering your coursework.
+              </p>
+            </div>
+            <div
+              id="rankBadgeContainer"
+              class="bg-black/20 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 text-center flex-shrink-0"
+            >
+              <span
+                class="block text-[10px] uppercase tracking-wider text-teal-200 font-medium"
+                >Class Rank</span
+              >
+              <span id="statUserRank" class="text-2xl sm:text-3xl font-bold"
+                >—</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Metrics Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div
+            class="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm"
+          >
+            <div class="flex items-center justify-between">
+              <span
+                class="text-xs font-semibold uppercase tracking-wider text-[#64748B]"
+                >Latest Exam Grade</span
+              >
+              <div
+                class="w-10 h-10 rounded-xl bg-teal-50 text-[#0D9488] flex items-center justify-center"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012-2"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div class="mt-4">
+              <h3
+                id="metricLatestExamScore"
+                class="text-2xl font-bold text-[#0F172A]"
+              >
+                —
+              </h3>
+              <p
+                id="metricLatestExamTitle"
+                class="text-xs text-[#64748B] mt-1 truncate"
+              >
+                No exams graded yet
+              </p>
+            </div>
+          </div>
+
+          <div
+            class="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm"
+          >
+            <div class="flex items-center justify-between">
+              <span
+                class="text-xs font-semibold uppercase tracking-wider text-[#64748B]"
+                >Pending Homeworks</span
+              >
+              <div
+                class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div class="mt-4">
+              <h3
+                id="metricPendingHomeworks"
+                class="text-2xl font-bold text-[#0F172A]"
+              >
+                0
+              </h3>
+              <p class="text-xs text-[#64748B] mt-1">
+                Requiring your attention
+              </p>
+            </div>
+          </div>
+
+          <div
+            class="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm"
+          >
+            <div class="flex items-center justify-between">
+              <span
+                class="text-xs font-semibold uppercase tracking-wider text-[#64748B]"
+                >Total Uploads</span
+              >
+              <div
+                class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div class="mt-4">
+              <h3
+                id="metricTotalUploads"
+                class="text-2xl font-bold text-[#0F172A]"
+              >
+                0
+              </h3>
+              <p class="text-xs text-[#64748B] mt-1">
+                Files & past papers available
+              </p>
+            </div>
+          </div>
+
+          <div
+            class="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm"
+          >
+            <div class="flex items-center justify-between">
+              <span
+                class="text-xs font-semibold uppercase tracking-wider text-[#64748B]"
+                >Class Standings</span
+              >
+              <div
+                class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div class="mt-4">
+              <h3
+                id="metricClassStanding"
+                class="text-2xl font-bold text-[#0F172A]"
+              >
+                Top Tier
+              </h3>
+              <p id="metricStandingSub" class="text-xs text-[#64748B] mt-1">
+                Based on aggregate grades
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Dashboard Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <!-- Left 2 Columns -->
+          <div class="lg:col-span-2 space-y-8">
+            <!-- Latest Graded Exam Card -->
+            <div
+              class="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-[#0F172A]">
+                  Latest Graded Exam
+                </h3>
+                <a
+                  href="grades.html"
+                  class="text-xs font-semibold text-[#0D9488] hover:underline flex items-center gap-1"
+                  ><span>View All Grades</span> &rarr;</a
+                >
+              </div>
+              <div id="latestExamCardContent">
+                <div class="py-8 text-center text-sm text-[#64748B]">
+                  Loading latest graded exam...
+                </div>
+              </div>
+            </div>
+
+            <!-- Latest Homework Card -->
+            <div
+              class="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-[#0F172A]">
+                  Latest Homework Assigned
+                </h3>
+                <a
+                  href="homeworks.html"
+                  class="text-xs font-semibold text-[#0D9488] hover:underline flex items-center gap-1"
+                  ><span>View All Homeworks</span> &rarr;</a
+                >
+              </div>
+              <div id="latestHomeworkCardContent">
+                <div class="py-8 text-center text-sm text-[#64748B]">
+                  Loading latest homework...
+                </div>
+              </div>
+            </div>
+
+            <!-- Latest Uploaded Files & Announcements -->
+            <div
+              class="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-[#0F172A]">
+                  Latest Uploads & Announcements
+                </h3>
+                <a
+                  href="files.html"
+                  class="text-xs font-semibold text-[#0D9488] hover:underline flex items-center gap-1"
+                  ><span>View Files</span> &rarr;</a
+                >
+              </div>
+              <div id="latestUploadsList" class="space-y-3">
+                <div class="py-6 text-center text-sm text-[#64748B]">
+                  Loading latest uploads...
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column -->
+          <div class="space-y-8">
+            <div
+              class="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-[#0F172A]">
+                  Top 3 Performers
+                </h3>
+                <span
+                  class="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-semibold"
+                  >Podium</span
+                >
+              </div>
+              <p class="text-xs text-[#64748B] mb-6">
+                Class leaders ranked by cumulative exam performance.
+              </p>
+              <div id="topPerformersList" class="space-y-4">
+                <div class="py-8 text-center text-sm text-[#64748B]">
+                  Loading top performers...
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Navigation -->
+            <div
+              class="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm"
+            >
+              <h3 class="text-lg font-bold text-[#0F172A] mb-4">
+                Quick Navigation
+              </h3>
+              <div class="grid grid-cols-2 gap-3">
+                <a
+                  href="grades.html"
+                  class="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl hover:border-[#0D9488] transition-colors text-center block"
+                >
+                  <span class="block text-xs font-bold text-[#0F172A]"
+                    >Exams & Grades</span
+                  >
+                  <span class="text-[10px] text-[#64748B]">Check scores</span>
+                </a>
+                <a
+                  href="homeworks.html"
+                  class="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl hover:border-[#0D9488] transition-colors text-center block"
+                >
+                  <span class="block text-xs font-bold text-[#0F172A]"
+                    >Homework</span
+                  >
+                  <span class="text-[10px] text-[#64748B]">Submit work</span>
+                </a>
+                <a
+                  href="files.html"
+                  class="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl hover:border-[#0D9488] transition-colors text-center block"
+                >
+                  <span class="block text-xs font-bold text-[#0F172A]"
+                    >Files / Library</span
+                  >
+                  <span class="text-[10px] text-[#64748B]"
+                    >Study materials</span
+                  >
+                </a>
+                <a
+                  href="pastpapers.html"
+                  class="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl hover:border-[#0D9488] transition-colors text-center block"
+                >
+                  <span class="block text-xs font-bold text-[#0F172A]"
+                    >Past Papers</span
+                  >
+                  <span class="text-[10px] text-[#64748B]">Practice exams</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- JS API & Dashboard Controller Script -->
+    <script src="dashboard.js"></script>
+    <script>
+      fetch("sidebar.html")
+        .then((res) => res.text())
+        .then((html) => {
+          const container = document.getElementById("sidebarContainer");
+          container.innerHTML = html;
+          const scripts = container.querySelectorAll("script");
+          scripts.forEach((script) => {
+            const newScript = document.createElement("script");
+            newScript.textContent = script.textContent;
+            document.body.appendChild(newScript);
+          });
+          if (typeof renderSidebar === "function") {
+            renderSidebar("Dashboard");
+          }
+        });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1368 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Progress & Analytics — Student Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for analytics visuals -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family:
+          "Inter",
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      canvas {
+        max-width: 100%;
+      }
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 8px;
+      }
+      .chart-empty-state {
+        display: none;
+      }
+      .chart-card.is-empty .chart-canvas-wrap {
+        display: none;
+      }
+      .chart-card.is-empty .chart-empty-state {
+        display: flex;
+      }
+    </style>
+  </head>
+  <body class="bg-[#F8FAFC] text-[#0F172A] min-h-screen flex">
+    <!-- Sidebar Container -->
+    <aside
+      id="sidebarContainer"
+      class="hidden md:flex flex-col shrink-0 h-screen sticky top-0"
+    ></aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto">
+    <!-- Mobile burger button (shown only on mobile) -->
+    <div class="md:hidden sticky top-0 z-30 bg-white border-b border-[#E2E8F0] px-4 py-3 flex items-center gap-3 shadow-sm">
+      <button
+        onclick="if(typeof openMobileSidebar==='function')openMobileSidebar();"
+        class="p-2 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[#0F172A] hover:bg-slate-100 transition-colors flex-shrink-0"
+        aria-label="Open menu"
+      >
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <span class="font-bold text-[#0F172A] text-base tracking-tight" style="font-family:'Urbanist',sans-serif;">MyPortal</span>
+    </div>
+      <div class="p-6 md:p-10">
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6"
+      >
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-[#0F172A]">
+            My Progress Overview
+          </h1>
+          <p class="text-sm text-[#64748B]">
+            Monitor your comprehensive engagement, attendance, homework
+            submissions, exam grades, and progressive analytics.
+          </p>
+        </div>
+      </div>
+
+      <!-- Loading Spinner -->
+      <div
+        id="loadingDetails"
+        class="py-20 flex justify-center items-center bg-white rounded-2xl border border-[#E2E8F0] shadow-sm"
+      >
+        <div class="flex flex-col items-center gap-2">
+          <div
+            class="w-8 h-8 border-4 border-[#0D9488] border-t-transparent rounded-full animate-spin"
+          ></div>
+          <span class="text-xs text-[#64748B] font-medium"
+            >Loading your records & analytics...</span
+          >
+        </div>
+      </div>
+
+      <!-- Student Detail View Container (Hidden until loaded) -->
+      <div id="studentDetailView" class="space-y-6 hidden">
+        <!-- Student Header Info Card -->
+        <div
+          class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm"
+        >
+          <div>
+            <h2 id="mainStudentName" class="text-xl font-bold text-[#0F172A]">
+              Student Name
+            </h2>
+            <p id="mainStudentSchool" class="text-xs text-[#64748B]">
+              School name
+            </p>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div
+          class="flex border-b border-[#E2E8F0] px-6 gap-6 bg-white rounded-2xl border shadow-sm overflow-x-auto"
+        >
+          <button
+            onclick="switchTab('analytics')"
+            id="tab_btn_analytics"
+            class="py-4 text-xs font-bold border-b-2 border-[#0D9488] text-[#0D9488] transition-all whitespace-nowrap flex items-center gap-1.5"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
+            </svg>
+            Analytics & Charts
+          </button>
+          <button
+            onclick="switchTab('exams')"
+            id="tab_btn_exams"
+            class="py-4 text-xs font-bold border-b-2 border-transparent text-[#64748B] hover:text-[#0F172A] transition-all whitespace-nowrap flex items-center gap-1.5"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+              />
+            </svg>
+            Exams & Grades Table
+          </button>
+          <button
+            onclick="switchTab('attendance')"
+            id="tab_btn_attendance"
+            class="py-4 text-xs font-bold border-b-2 border-transparent text-[#64748B] hover:text-[#0F172A] transition-all whitespace-nowrap flex items-center gap-1.5"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            Attendance
+          </button>
+          <button
+            onclick="switchTab('homeworks')"
+            id="tab_btn_homeworks"
+            class="py-4 text-xs font-bold border-b-2 border-transparent text-[#64748B] hover:text-[#0F172A] transition-all whitespace-nowrap flex items-center gap-1.5"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+              />
+            </svg>
+            Homeworks
+          </button>
+          <button
+            onclick="switchTab('pastpapers')"
+            id="tab_btn_pastpapers"
+            class="py-4 text-xs font-bold border-b-2 border-transparent text-[#64748B] hover:text-[#0F172A] transition-all whitespace-nowrap flex items-center gap-1.5"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+              />
+            </svg>
+            Pastpapers
+          </button>
+        </div>
+
+        <!-- Tab Content Sections -->
+        <div id="tab_content_analytics" class="space-y-6">
+          <!-- Summary metrics cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div
+              class="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm relative overflow-hidden"
+            >
+              <div class="absolute left-0 top-0 h-full w-1 bg-[#0D9488]"></div>
+              <p class="text-xs text-[#64748B] font-semibold">
+                Overall Average Grade
+              </p>
+              <h3
+                id="statAvgPercentage"
+                class="text-2xl font-bold text-[#0D9488] mt-1"
+              >
+                0.0%
+              </h3>
+            </div>
+            <div
+              class="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm relative overflow-hidden"
+            >
+              <div class="absolute left-0 top-0 h-full w-1 bg-blue-500"></div>
+              <p class="text-xs text-[#64748B] font-semibold">
+                Attendance Rate
+              </p>
+              <h3
+                id="statAttendanceRate"
+                class="text-2xl font-bold text-blue-600 mt-1"
+              >
+                0.0%
+              </h3>
+            </div>
+            <div
+              class="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm relative overflow-hidden"
+            >
+              <div class="absolute left-0 top-0 h-full w-1 bg-amber-500"></div>
+              <p class="text-xs text-[#64748B] font-semibold">
+                Homework Completion
+              </p>
+              <h3
+                id="statHwRate"
+                class="text-2xl font-bold text-amber-600 mt-1"
+              >
+                0.0%
+              </h3>
+            </div>
+            <div
+              class="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm relative overflow-hidden"
+            >
+              <div class="absolute left-0 top-0 h-full w-1 bg-purple-500"></div>
+              <p class="text-xs text-[#64748B] font-semibold">
+                Pastpaper Completion
+              </p>
+              <h3
+                id="statPpRate"
+                class="text-2xl font-bold text-purple-600 mt-1"
+              >
+                0.0%
+              </h3>
+            </div>
+            <div
+              class="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm relative overflow-hidden"
+            >
+              <div class="absolute left-0 top-0 h-full w-1 bg-slate-400"></div>
+              <p class="text-xs text-[#64748B] font-semibold">
+                Exams Completed / Graded
+              </p>
+              <h3
+                id="statExamsCount"
+                class="text-2xl font-bold text-[#0F172A] mt-1"
+              >
+                0 / 0
+              </h3>
+            </div>
+            <div
+              class="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm relative overflow-hidden"
+            >
+              <div
+                id="statTrendBar"
+                class="absolute left-0 top-0 h-full w-1 bg-emerald-500"
+              ></div>
+              <p class="text-xs text-[#64748B] font-semibold">
+                Latest Progress Trend
+              </p>
+              <h3
+                id="statTrend"
+                class="text-2xl font-bold text-emerald-600 mt-1"
+              >
+                +0.0%
+              </h3>
+            </div>
+          </div>
+
+          <!-- Charts Container -->
+          <div class="grid grid-cols-1 gap-6">
+            <!-- Full width: Score progression -->
+            <div
+              class="chart-card bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm"
+              id="card_progressLineChart"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <h4
+                  class="text-xs font-bold text-[#0F172A] uppercase tracking-wider"
+                >
+                  Exam & Quiz Score Progression (%)
+                </h4>
+              </div>
+              <div class="chart-canvas-wrap relative h-72">
+                <canvas id="progressLineChart"></canvas>
+              </div>
+              <div
+                class="chart-empty-state h-72 items-center justify-center text-xs text-[#94A3B8] font-medium"
+              >
+                No graded exams yet.
+              </div>
+            </div>
+
+            <!-- Paired: Progress delta + Exam type -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <div
+                class="chart-card bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm"
+                id="card_deltaBarChart"
+              >
+                <h4
+                  class="text-xs font-bold text-[#0F172A] mb-4 uppercase tracking-wider"
+                >
+                  Consecutive Exam Progress Δ (%)
+                </h4>
+                <div class="chart-canvas-wrap relative h-72">
+                  <canvas id="deltaBarChart"></canvas>
+                </div>
+                <div
+                  class="chart-empty-state h-72 items-center justify-center text-xs text-[#94A3B8] font-medium"
+                >
+                  Not enough graded exams yet.
+                </div>
+              </div>
+              <div
+                class="chart-card bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm"
+                id="card_typeBarChart"
+              >
+                <h4
+                  class="text-xs font-bold text-[#0F172A] mb-4 uppercase tracking-wider"
+                >
+                  Performance by Exam Type (%)
+                </h4>
+                <div class="chart-canvas-wrap relative h-72">
+                  <canvas id="typeBarChart"></canvas>
+                </div>
+                <div
+                  class="chart-empty-state h-72 items-center justify-center text-xs text-[#94A3B8] font-medium"
+                >
+                  No graded exams yet.
+                </div>
+              </div>
+            </div>
+
+            <!-- Paired: Grade tiers + Grade letters -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <div
+                class="chart-card bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm"
+                id="card_tierDoughnutChart"
+              >
+                <h4
+                  class="text-xs font-bold text-[#0F172A] mb-4 uppercase tracking-wider"
+                >
+                  Grade Distribution Tiers
+                </h4>
+                <div
+                  class="chart-canvas-wrap relative h-72 flex justify-center"
+                >
+                  <canvas id="tierDoughnutChart" class="max-h-72"></canvas>
+                </div>
+                <div
+                  class="chart-empty-state h-72 items-center justify-center text-xs text-[#94A3B8] font-medium"
+                >
+                  No graded exams yet.
+                </div>
+              </div>
+              <div
+                class="chart-card bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm"
+                id="card_gradeLetterBarChart"
+              >
+                <h4
+                  class="text-xs font-bold text-[#0F172A] mb-4 uppercase tracking-wider"
+                >
+                  Grade Letter Distribution
+                </h4>
+                <div class="chart-canvas-wrap relative h-72">
+                  <canvas id="gradeLetterBarChart"></canvas>
+                </div>
+                <div
+                  class="chart-empty-state h-72 items-center justify-center text-xs text-[#94A3B8] font-medium"
+                >
+                  No letter grades recorded yet.
+                </div>
+              </div>
+            </div>
+
+            <!-- Paired: Attendance status + Attendance trend -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <div
+                class="chart-card bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm"
+                id="card_attendanceDoughnutChart"
+              >
+                <h4
+                  class="text-xs font-bold text-[#0F172A] mb-4 uppercase tracking-wider"
+                >
+                  Attendance Status Breakdown
+                </h4>
+                <div
+                  class="chart-canvas-wrap relative h-72 flex justify-center"
+                >
+                  <canvas
+                    id="attendanceDoughnutChart"
+                    class="max-h-72"
+                  ></canvas>
+                </div>
+                <div
+                  class="chart-empty-state h-72 items-center justify-center text-xs text-[#94A3B8] font-medium"
+                >
+                  No attendance sessions found.
+                </div>
+              </div>
+              <div
+                class="chart-card bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm"
+                id="card_attendanceTrendChart"
+              >
+                <h4
+                  class="text-xs font-bold text-[#0F172A] mb-4 uppercase tracking-wider"
+                >
+                  Attendance Rate Trend (Cumulative %)
+                </h4>
+                <div class="chart-canvas-wrap relative h-72">
+                  <canvas id="attendanceTrendChart"></canvas>
+                </div>
+                <div
+                  class="chart-empty-state h-72 items-center justify-center text-xs text-[#94A3B8] font-medium"
+                >
+                  No attendance sessions found.
+                </div>
+              </div>
+            </div>
+
+            <!-- Paired: Homework completion + Pastpaper completion -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <div
+                class="chart-card bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm"
+                id="card_homeworkDoughnutChart"
+              >
+                <h4
+                  class="text-xs font-bold text-[#0F172A] mb-4 uppercase tracking-wider"
+                >
+                  Homework Completion
+                </h4>
+                <div
+                  class="chart-canvas-wrap relative h-72 flex justify-center"
+                >
+                  <canvas id="homeworkDoughnutChart" class="max-h-72"></canvas>
+                </div>
+                <div
+                  class="chart-empty-state h-72 items-center justify-center text-xs text-[#94A3B8] font-medium"
+                >
+                  No homeworks assigned yet.
+                </div>
+              </div>
+              <div
+                class="chart-card bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm"
+                id="card_pastpaperDoughnutChart"
+              >
+                <h4
+                  class="text-xs font-bold text-[#0F172A] mb-4 uppercase tracking-wider"
+                >
+                  Pastpaper Completion
+                </h4>
+                <div
+                  class="chart-canvas-wrap relative h-72 flex justify-center"
+                >
+                  <canvas id="pastpaperDoughnutChart" class="max-h-72"></canvas>
+                </div>
+                <div
+                  class="chart-empty-state h-72 items-center justify-center text-xs text-[#94A3B8] font-medium"
+                >
+                  No pastpapers assigned yet.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab_content_exams" class="space-y-3 hidden"></div>
+        <div id="tab_content_attendance" class="space-y-3 hidden"></div>
+        <div id="tab_content_homeworks" class="space-y-3 hidden"></div>
+        <div id="tab_content_pastpapers" class="space-y-3 hidden"></div>
+      </div>
+      </div>
+    </main>
+
+    <script>
+      /* ===================== STATE ===================== */
+      let currentStudentData = null;
+      let chartInstances = {}; // keyed by canvas id
+      let activeTab = "analytics";
+
+      const PALETTE = {
+        teal: "#0D9488",
+        tealSoft: "rgba(13,148,136,0.14)",
+        blue: "#3B82F6",
+        purple: "#8B5CF6",
+        amber: "#F59E0B",
+        rose: "#EF4444",
+        emerald: "#10B981",
+        slate: "#64748B",
+        slateLight: "#CBD5E1",
+      };
+
+      /* ===================== CHART.JS GLOBAL THEME ===================== */
+      Chart.defaults.font.family =
+        "'Inter', ui-sans-serif, system-ui, sans-serif";
+      Chart.defaults.color = "#64748B";
+      Chart.defaults.animation.duration = 650;
+      Chart.defaults.animation.easing = "easeOutQuart";
+      Chart.defaults.plugins.legend.labels.usePointStyle = true;
+      Chart.defaults.plugins.legend.labels.boxWidth = 8;
+      Chart.defaults.plugins.legend.labels.padding = 14;
+      Chart.defaults.plugins.legend.labels.font = { size: 11, weight: "600" };
+      Chart.defaults.plugins.tooltip.backgroundColor = "#0F172A";
+      Chart.defaults.plugins.tooltip.padding = 10;
+      Chart.defaults.plugins.tooltip.cornerRadius = 8;
+      Chart.defaults.plugins.tooltip.titleFont = { size: 12, weight: "700" };
+      Chart.defaults.plugins.tooltip.bodyFont = { size: 11.5 };
+      Chart.defaults.plugins.tooltip.displayColors = true;
+      Chart.defaults.plugins.tooltip.boxPadding = 4;
+
+      const centerTextPlugin = {
+        id: "centerText",
+        afterDraw(chart) {
+          const cfg = chart.config.options?.plugins?.centerText;
+          if (!cfg || !cfg.text) return;
+          const {
+            ctx,
+            chartArea: { width, height, left, top },
+          } = chart;
+          ctx.save();
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.font = "800 22px Inter, sans-serif";
+          ctx.fillStyle = cfg.color || "#0F172A";
+          ctx.fillText(cfg.text, left + width / 2, top + height / 2 - 7);
+          if (cfg.subtext) {
+            ctx.font = "600 10px Inter, sans-serif";
+            ctx.fillStyle = "#94A3B8";
+            ctx.fillText(cfg.subtext, left + width / 2, top + height / 2 + 13);
+          }
+          ctx.restore();
+        },
+      };
+      Chart.register(centerTextPlugin);
+
+      function makeVerticalGradient(ctx, area, colorTop, colorBottom) {
+        const gradient = ctx.createLinearGradient(0, area.top, 0, area.bottom);
+        gradient.addColorStop(0, colorTop);
+        gradient.addColorStop(1, colorBottom);
+        return gradient;
+      }
+
+      function hexToRgba(hex, alpha) {
+        const h = hex.replace("#", "");
+        const r = parseInt(h.substring(0, 2), 16);
+        const g = parseInt(h.substring(2, 4), 16);
+        const b = parseInt(h.substring(4, 6), 16);
+        return `rgba(${r},${g},${b},${alpha})`;
+      }
+
+      /* ===================== AUTH + SIDEBAR ===================== */
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (!user.full_name) {
+        window.location.href = "index.html";
+      } else {
+        init();
+      }
+
+      fetch("sidebar.html")
+        .then((res) => res.text())
+        .then((html) => {
+          const container = document.getElementById("sidebarContainer");
+          container.innerHTML = html;
+          const scripts = container.querySelectorAll("script");
+          scripts.forEach((script) => {
+            const newScript = document.createElement("script");
+            newScript.textContent = script.textContent;
+            document.body.appendChild(newScript);
+          });
+          if (typeof renderSidebar === "function") {
+            renderSidebar("Students Progress");
+          }
+        });
+
+      async function init() {
+        try {
+          const res = await fetch(
+            `/api/student-progress?student_id=${user.id}`,
+          );
+          if (!res.ok) throw new Error("Failed to fetch progress data");
+          currentStudentData = await res.json();
+
+          document.getElementById("mainStudentName").innerText =
+            currentStudentData.student.full_name;
+          document.getElementById("mainStudentSchool").innerText =
+            currentStudentData.student.school_name || "Student Portal";
+
+          renderAnalyticsTab();
+          renderExamsTab();
+          renderAttendanceTab();
+          renderHomeworksTab();
+          renderPastpapersTab();
+
+          document.getElementById("loadingDetails").classList.add("hidden");
+          document
+            .getElementById("studentDetailView")
+            .classList.remove("hidden");
+          switchTab("analytics");
+        } catch (err) {
+          console.error(err);
+          document.getElementById("loadingDetails").innerHTML = `
+            <div class="p-12 text-center text-red-600 font-medium">
+              Failed to load your progress records. Please refresh the page.
+            </div>
+          `;
+        }
+      }
+
+      function destroyAllCharts() {
+        Object.values(chartInstances).forEach((c) => c && c.destroy());
+        chartInstances = {};
+      }
+
+      function switchTab(tabName) {
+        activeTab = tabName;
+        ["analytics", "exams", "attendance", "homeworks", "pastpapers"].forEach(
+          (t) => {
+            const btn = document.getElementById(`tab_btn_${t}`);
+            const content = document.getElementById(`tab_content_${t}`);
+            if (t === tabName) {
+              btn.className =
+                "py-4 text-xs font-bold border-b-2 border-[#0D9488] text-[#0D9488] transition-all whitespace-nowrap flex items-center gap-1.5";
+              content.classList.remove("hidden");
+            } else {
+              btn.className =
+                "py-4 text-xs font-bold border-b-2 border-transparent text-[#64748B] hover:text-[#0F172A] transition-all whitespace-nowrap flex items-center gap-1.5";
+              content.classList.add("hidden");
+            }
+          },
+        );
+      }
+
+      function setChartCardEmpty(cardId, isEmpty) {
+        const card = document.getElementById(cardId);
+        if (!card) return;
+        card.classList.toggle("is-empty", isEmpty);
+      }
+
+      function latestGradientColor(val) {
+        if (val > 0) return "text-emerald-600";
+        if (val < 0) return "text-rose-600";
+        return "text-slate-600";
+      }
+
+      /* ===================== ANALYTICS TAB ===================== */
+      function renderAnalyticsTab() {
+        destroyAllCharts();
+
+        const commonOptions = {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: "index", intersect: false },
+        };
+
+        const gradedExams = (currentStudentData.exams || []).filter(
+          (e) => e.numeric_grade !== null && parseFloat(e.total_grade) > 0,
+        );
+
+        let totalEarned = 0;
+        let totalPossible = 0;
+        const examLabels = [];
+        const examPercentages = [];
+        const examDeltas = [];
+
+        gradedExams.forEach((ex, idx) => {
+          const label = ex.exam_date
+            ? new Date(ex.exam_date).toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "short",
+              })
+            : ex.exam_title;
+          examLabels.push(label);
+
+          const earned = parseFloat(ex.numeric_grade) || 0;
+          const total = parseFloat(ex.total_grade) || 100;
+          const pct = (earned / total) * 100;
+
+          examPercentages.push(parseFloat(pct.toFixed(1)));
+          totalEarned += earned;
+          totalPossible += total;
+
+          if (idx > 0) {
+            const prevEarned =
+              parseFloat(gradedExams[idx - 1].numeric_grade) || 0;
+            const prevTotal =
+              parseFloat(gradedExams[idx - 1].total_grade) || 100;
+            const prevPct = (prevEarned / prevTotal) * 100;
+            examDeltas.push(parseFloat((pct - prevPct).toFixed(1)));
+          } else {
+            examDeltas.push(0);
+          }
+        });
+
+        const avgPct =
+          totalPossible > 0
+            ? ((totalEarned / totalPossible) * 100).toFixed(1)
+            : "0.0";
+        const latestDelta =
+          examDeltas.length > 0 ? examDeltas[examDeltas.length - 1] : 0;
+
+        const attendance = currentStudentData.attendance || [];
+        const attSorted = [...attendance].sort(
+          (a, b) => new Date(a.date) - new Date(b.date),
+        );
+        const attStatusCounts = {};
+        const attTrendLabels = [];
+        const attTrendData = [];
+        let runningPresent = 0;
+
+        attSorted.forEach((a, idx) => {
+          const status = (a.status || "absent").toLowerCase();
+          attStatusCounts[status] = (attStatusCounts[status] || 0) + 1;
+          if (status === "present") runningPresent++;
+          attTrendLabels.push(
+            new Date(a.date).toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+            }),
+          );
+          attTrendData.push(
+            parseFloat(((runningPresent / (idx + 1)) * 100).toFixed(1)),
+          );
+        });
+
+        const attendanceRate = attendance.length
+          ? (
+              ((attStatusCounts["present"] || 0) / attendance.length) *
+              100
+            ).toFixed(1)
+          : "0.0";
+
+        const homeworks = currentStudentData.homeworks || [];
+        const hwStatusCounts = {};
+        homeworks.forEach((h) => {
+          const s = (h.status || "missing").toLowerCase();
+          hwStatusCounts[s] = (hwStatusCounts[s] || 0) + 1;
+        });
+        const hwRate = homeworks.length
+          ? (
+              ((hwStatusCounts["submitted"] || 0) / homeworks.length) *
+              100
+            ).toFixed(1)
+          : "0.0";
+
+        const pastpapers = currentStudentData.pastpapers || [];
+        const ppStatusCounts = {};
+        pastpapers.forEach((p) => {
+          const s = (p.status || "missing").toLowerCase();
+          ppStatusCounts[s] = (ppStatusCounts[s] || 0) + 1;
+        });
+        const ppRate = pastpapers.length
+          ? (
+              ((ppStatusCounts["submitted"] || 0) / pastpapers.length) *
+              100
+            ).toFixed(1)
+          : "0.0";
+
+        const typeMap = {};
+        gradedExams.forEach((ex) => {
+          const t = ex.type || "General";
+          const earned = parseFloat(ex.numeric_grade) || 0;
+          const total = parseFloat(ex.total_grade) || 100;
+          const pct = (earned / total) * 100;
+          if (!typeMap[t]) typeMap[t] = { sum: 0, count: 0 };
+          typeMap[t].sum += pct;
+          typeMap[t].count += 1;
+        });
+        const typeLabels = Object.keys(typeMap);
+        const typeData = typeLabels.map((t) =>
+          parseFloat((typeMap[t].sum / typeMap[t].count).toFixed(1)),
+        );
+
+        const tiers = {
+          "Excellent (≥85%)": 0,
+          "Good (70-84%)": 0,
+          "Average (50-69%)": 0,
+          "Below 50%": 0,
+        };
+        examPercentages.forEach((p) => {
+          if (p >= 85) tiers["Excellent (≥85%)"]++;
+          else if (p >= 70) tiers["Good (70-84%)"]++;
+          else if (p >= 50) tiers["Average (50-69%)"]++;
+          else tiers["Below 50%"]++;
+        });
+
+        const letterOrder = [
+          "A*",
+          "A",
+          "B",
+          "C",
+          "D",
+          "E",
+          "U",
+          "Pass",
+          "Fail",
+        ];
+        const letterCounts = {};
+        gradedExams.forEach((ex) => {
+          if (ex.letter_grade) {
+            letterCounts[ex.letter_grade] =
+              (letterCounts[ex.letter_grade] || 0) + 1;
+          }
+        });
+        const letterLabels = Object.keys(letterCounts).sort((a, b) => {
+          const ia = letterOrder.indexOf(a);
+          const ib = letterOrder.indexOf(b);
+          if (ia === -1 && ib === -1) return a.localeCompare(b);
+          if (ia === -1) return 1;
+          if (ib === -1) return -1;
+          return ia - ib;
+        });
+        const letterData = letterLabels.map((l) => letterCounts[l]);
+
+        document.getElementById("statAvgPercentage").innerText = `${avgPct}%`;
+        document.getElementById("statAttendanceRate").innerText =
+          `${attendanceRate}%`;
+        document.getElementById("statHwRate").innerText = `${hwRate}%`;
+        document.getElementById("statPpRate").innerText = `${ppRate}%`;
+        document.getElementById("statExamsCount").innerText =
+          `${gradedExams.length} / ${(currentStudentData.exams || []).length}`;
+        const trendEl = document.getElementById("statTrend");
+        trendEl.innerText = `${latestDelta >= 0 ? "+" : ""}${latestDelta}%`;
+        trendEl.className = `text-2xl font-bold mt-1 ${latestGradientColor(latestDelta)}`;
+        document.getElementById("statTrendBar").className =
+          `absolute left-0 top-0 h-full w-1 ${latestDelta >= 0 ? "bg-emerald-500" : "bg-rose-500"}`;
+
+        setChartCardEmpty("card_progressLineChart", examLabels.length === 0);
+        if (examLabels.length > 0) {
+          chartInstances.progressLineChart = new Chart(
+            document.getElementById("progressLineChart").getContext("2d"),
+            {
+              type: "line",
+              data: {
+                labels: examLabels,
+                datasets: [
+                  {
+                    label: "Score %",
+                    data: examPercentages,
+                    borderColor: PALETTE.teal,
+                    backgroundColor: (context) => {
+                      const { chartArea, ctx } = context.chart;
+                      if (!chartArea) return null;
+                      return makeVerticalGradient(
+                        ctx,
+                        chartArea,
+                        hexToRgba(PALETTE.teal, 0.35),
+                        hexToRgba(PALETTE.teal, 0.02),
+                      );
+                    },
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2.5,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: "#fff",
+                    pointBorderColor: PALETTE.teal,
+                    pointBorderWidth: 2,
+                  },
+                ],
+              },
+              options: {
+                ...commonOptions,
+                scales: {
+                  y: {
+                    min: 0,
+                    max: 100,
+                    grid: { color: "#F1F5F9" },
+                    ticks: { callback: (v) => v + "%" },
+                  },
+                  x: { grid: { display: false } },
+                },
+              },
+            },
+          );
+        }
+
+        setChartCardEmpty("card_deltaBarChart", examLabels.length === 0);
+        if (examLabels.length > 0) {
+          chartInstances.deltaBarChart = new Chart(
+            document.getElementById("deltaBarChart").getContext("2d"),
+            {
+              type: "bar",
+              data: {
+                labels: examLabels,
+                datasets: [
+                  {
+                    label: "Progress Δ vs Prev (%)",
+                    data: examDeltas,
+                    backgroundColor: examDeltas.map((d) =>
+                      d >= 0
+                        ? hexToRgba(PALETTE.emerald, 0.85)
+                        : hexToRgba(PALETTE.rose, 0.85),
+                    ),
+                    borderRadius: 6,
+                    maxBarThickness: 42,
+                  },
+                ],
+              },
+              options: {
+                ...commonOptions,
+                scales: {
+                  y: {
+                    grid: { color: "#F1F5F9" },
+                    ticks: { callback: (v) => v + "%" },
+                  },
+                  x: { grid: { display: false } },
+                },
+                plugins: { legend: { display: false } },
+              },
+            },
+          );
+        }
+
+        setChartCardEmpty("card_typeBarChart", typeLabels.length === 0);
+        if (typeLabels.length > 0) {
+          chartInstances.typeBarChart = new Chart(
+            document.getElementById("typeBarChart").getContext("2d"),
+            {
+              type: "bar",
+              data: {
+                labels: typeLabels.map((t) => t.toUpperCase()),
+                datasets: [
+                  {
+                    label: "Avg Score %",
+                    data: typeData,
+                    backgroundColor: PALETTE.blue,
+                    borderRadius: 8,
+                    maxBarThickness: 48,
+                  },
+                ],
+              },
+              options: {
+                ...commonOptions,
+                scales: {
+                  y: {
+                    min: 0,
+                    max: 100,
+                    grid: { color: "#F1F5F9" },
+                    ticks: { callback: (v) => v + "%" },
+                  },
+                  x: { grid: { display: false } },
+                },
+                plugins: { legend: { display: false } },
+              },
+            },
+          );
+        }
+
+        const tierTotal = Object.values(tiers).reduce((a, b) => a + b, 0);
+        setChartCardEmpty("card_tierDoughnutChart", tierTotal === 0);
+        if (tierTotal > 0) {
+          chartInstances.tierDoughnutChart = new Chart(
+            document.getElementById("tierDoughnutChart").getContext("2d"),
+            {
+              type: "doughnut",
+              data: {
+                labels: Object.keys(tiers),
+                datasets: [
+                  {
+                    data: Object.values(tiers),
+                    backgroundColor: [
+                      PALETTE.emerald,
+                      PALETTE.blue,
+                      PALETTE.amber,
+                      PALETTE.rose,
+                    ],
+                    borderWidth: 3,
+                    borderColor: "#fff",
+                  },
+                ],
+              },
+              options: {
+                ...commonOptions,
+                cutout: "68%",
+                plugins: {
+                  legend: { position: "bottom" },
+                  centerText: {
+                    text: `${avgPct}%`,
+                    subtext: "Avg Score",
+                    color: PALETTE.teal,
+                  },
+                },
+              },
+            },
+          );
+        }
+
+        setChartCardEmpty(
+          "card_gradeLetterBarChart",
+          letterLabels.length === 0,
+        );
+        if (letterLabels.length > 0) {
+          chartInstances.gradeLetterBarChart = new Chart(
+            document.getElementById("gradeLetterBarChart").getContext("2d"),
+            {
+              type: "bar",
+              data: {
+                labels: letterLabels,
+                datasets: [
+                  {
+                    label: "Number of Exams",
+                    data: letterData,
+                    backgroundColor: PALETTE.purple,
+                    borderRadius: 8,
+                    maxBarThickness: 40,
+                  },
+                ],
+              },
+              options: {
+                ...commonOptions,
+                scales: {
+                  y: { grid: { color: "#F1F5F9" }, ticks: { precision: 0 } },
+                  x: { grid: { display: false } },
+                },
+                plugins: { legend: { display: false } },
+              },
+            },
+          );
+        }
+
+        setChartCardEmpty(
+          "card_attendanceDoughnutChart",
+          attendance.length === 0,
+        );
+        if (attendance.length > 0) {
+          const attLabels = Object.keys(attStatusCounts);
+          const attColorMap = {
+            present: PALETTE.emerald,
+            absent: PALETTE.rose,
+            late: PALETTE.amber,
+            excused: PALETTE.blue,
+          };
+          chartInstances.attendanceDoughnutChart = new Chart(
+            document.getElementById("attendanceDoughnutChart").getContext("2d"),
+            {
+              type: "doughnut",
+              data: {
+                labels: attLabels.map((l) => l[0].toUpperCase() + l.slice(1)),
+                datasets: [
+                  {
+                    data: attLabels.map((l) => attStatusCounts[l]),
+                    backgroundColor: attLabels.map(
+                      (l) => attColorMap[l] || PALETTE.slate,
+                    ),
+                    borderWidth: 3,
+                    borderColor: "#fff",
+                  },
+                ],
+              },
+              options: {
+                ...commonOptions,
+                cutout: "68%",
+                plugins: {
+                  legend: { position: "bottom" },
+                  centerText: {
+                    text: `${attendanceRate}%`,
+                    subtext: "Present",
+                    color: PALETTE.blue,
+                  },
+                },
+              },
+            },
+          );
+        }
+
+        setChartCardEmpty(
+          "card_attendanceTrendChart",
+          attTrendLabels.length === 0,
+        );
+        if (attTrendLabels.length > 0) {
+          chartInstances.attendanceTrendChart = new Chart(
+            document.getElementById("attendanceTrendChart").getContext("2d"),
+            {
+              type: "line",
+              data: {
+                labels: attTrendLabels,
+                datasets: [
+                  {
+                    label: "Cumulative Attendance %",
+                    data: attTrendData,
+                    borderColor: PALETTE.blue,
+                    backgroundColor: hexToRgba(PALETTE.blue, 0.1),
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2.5,
+                  },
+                ],
+              },
+              options: {
+                ...commonOptions,
+                scales: {
+                  y: {
+                    min: 0,
+                    max: 100,
+                    grid: { color: "#F1F5F9" },
+                    ticks: { callback: (v) => v + "%" },
+                  },
+                  x: { grid: { display: false } },
+                },
+                plugins: { legend: { display: false } },
+              },
+            },
+          );
+        }
+
+        setChartCardEmpty("card_homeworkDoughnutChart", homeworks.length === 0);
+        if (homeworks.length > 0) {
+          const hwLabels = Object.keys(hwStatusCounts);
+          const hwColorMap = {
+            submitted: PALETTE.emerald,
+            late: PALETTE.amber,
+            missing: PALETTE.rose,
+          };
+          chartInstances.homeworkDoughnutChart = new Chart(
+            document.getElementById("homeworkDoughnutChart").getContext("2d"),
+            {
+              type: "doughnut",
+              data: {
+                labels: hwLabels.map((l) => l[0].toUpperCase() + l.slice(1)),
+                datasets: [
+                  {
+                    data: hwLabels.map((l) => hwStatusCounts[l]),
+                    backgroundColor: hwLabels.map(
+                      (l) => hwColorMap[l] || PALETTE.slate,
+                    ),
+                    borderWidth: 3,
+                    borderColor: "#fff",
+                  },
+                ],
+              },
+              options: {
+                ...commonOptions,
+                cutout: "68%",
+                plugins: {
+                  legend: { position: "bottom" },
+                  centerText: {
+                    text: `${hwRate}%`,
+                    subtext: "Submitted",
+                    color: PALETTE.amber,
+                  },
+                },
+              },
+            },
+          );
+        }
+
+        setChartCardEmpty(
+          "card_pastpaperDoughnutChart",
+          pastpapers.length === 0,
+        );
+        if (pastpapers.length > 0) {
+          const ppLabels = Object.keys(ppStatusCounts);
+          const ppColorMap = {
+            submitted: PALETTE.emerald,
+            missing: PALETTE.rose,
+            late: PALETTE.amber,
+          };
+          chartInstances.pastpaperDoughnutChart = new Chart(
+            document.getElementById("pastpaperDoughnutChart").getContext("2d"),
+            {
+              type: "doughnut",
+              data: {
+                labels: ppLabels.map((l) => l[0].toUpperCase() + l.slice(1)),
+                datasets: [
+                  {
+                    data: ppLabels.map((l) => ppStatusCounts[l]),
+                    backgroundColor: ppLabels.map(
+                      (l) => ppColorMap[l] || PALETTE.slate,
+                    ),
+                    borderWidth: 3,
+                    borderColor: "#fff",
+                  },
+                ],
+              },
+              options: {
+                ...commonOptions,
+                cutout: "68%",
+                plugins: {
+                  legend: { position: "bottom" },
+                  centerText: {
+                    text: `${ppRate}%`,
+                    subtext: "Submitted",
+                    color: PALETTE.purple,
+                  },
+                },
+              },
+            },
+          );
+        }
+      }
+
+      /* ===================== LIST TABS ===================== */
+      function renderExamsTab() {
+        const container = document.getElementById("tab_content_exams");
+        const items = currentStudentData.exams;
+
+        if (!items || items.length === 0) {
+          container.innerHTML = `<p class="text-xs text-[#64748B] text-center py-6 bg-white rounded-xl border border-[#E2E8F0]">No exams found.</p>`;
+          return;
+        }
+
+        container.innerHTML = items
+          .map((i) => {
+            const pct =
+              i.numeric_grade !== null && parseFloat(i.total_grade) > 0
+                ? (
+                    (parseFloat(i.numeric_grade) / parseFloat(i.total_grade)) *
+                    100
+                  ).toFixed(1)
+                : null;
+            return `
+            <div class="bg-white border border-[#E2E8F0] p-4 rounded-xl space-y-2 shadow-sm">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold text-[#0F172A]">${i.exam_title} <span class="text-[10px] text-[#64748B] font-normal">(${i.type})</span></h4>
+                <div class="flex items-center gap-2">
+                  <span class="px-2.5 py-1 bg-purple-50 text-purple-800 rounded-lg text-xs font-bold">
+                    Score: ${i.numeric_grade !== null ? `${i.numeric_grade} / ${i.total_grade} (${pct}%)` : "Not Graded"}
+                  </span>
+                  ${i.letter_grade ? `<span class="px-2.5 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-bold">${i.letter_grade}</span>` : ""}
+                </div>
+              </div>
+              ${i.comment ? `<p class="text-xs bg-[#F8FAFC] p-2 rounded border border-[#E2E8F0] text-[#0F172A]"><strong>Feedback:</strong> ${i.comment}</p>` : ""}
+            </div>
+          `;
+          })
+          .join("");
+      }
+
+      function renderAttendanceTab() {
+        const container = document.getElementById("tab_content_attendance");
+        const items = currentStudentData.attendance;
+        if (!items || items.length === 0) {
+          container.innerHTML = `<p class="text-xs text-[#64748B] text-center py-6 bg-white rounded-xl border border-[#E2E8F0]">No attendance sessions found.</p>`;
+          return;
+        }
+        container.innerHTML = items
+          .map((i) => {
+            const status = (i.status || "absent").toLowerCase();
+            const badgeClass =
+              status === "present"
+                ? "bg-emerald-100 text-emerald-800"
+                : status === "late"
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-rose-100 text-rose-800";
+            return `
+          <div class="bg-white border border-[#E2E8F0] p-4 rounded-xl flex items-center justify-between shadow-sm">
+            <div>
+              <h4 class="text-xs font-bold text-[#0F172A]">${i.session_title || "Attendance Session"}</h4>
+              <p class="text-[11px] text-[#64748B] mt-0.5">Date: ${i.date}</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-lg text-xs font-semibold uppercase ${badgeClass}">
+              ${i.status}
+            </span>
+          </div>
+        `;
+          })
+          .join("");
+      }
+
+      function renderHomeworksTab() {
+        const container = document.getElementById("tab_content_homeworks");
+        const items = currentStudentData.homeworks;
+        if (!items || items.length === 0) {
+          container.innerHTML = `<p class="text-xs text-[#64748B] text-center py-6 bg-white rounded-xl border border-[#E2E8F0]">No homeworks found.</p>`;
+          return;
+        }
+        container.innerHTML = items
+          .map((i) => {
+            const status = (i.status || "missing").toLowerCase();
+            const badgeClass =
+              status === "submitted"
+                ? "bg-emerald-100 text-emerald-800"
+                : status === "late"
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-rose-100 text-rose-800";
+            return `
+          <div class="bg-white border border-[#E2E8F0] p-4 rounded-xl space-y-2 shadow-sm">
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-bold text-[#0F172A]">${i.homework_title}</h4>
+              <span class="px-2.5 py-1 rounded-lg text-xs font-semibold uppercase ${badgeClass}">
+                ${i.status}
+              </span>
+            </div>
+            <p class="text-[11px] text-[#64748B]">Deadline: ${i.deadline ? new Date(i.deadline).toLocaleString() : "No deadline"}</p>
+            ${i.admin_comment ? `<p class="text-xs bg-[#F8FAFC] p-2 rounded border border-[#E2E8F0] text-[#0F172A]"><strong>Comment:</strong> ${i.admin_comment}</p>` : ""}
+          </div>
+        `;
+          })
+          .join("");
+      }
+
+      function renderPastpapersTab() {
+        const container = document.getElementById("tab_content_pastpapers");
+        const items = currentStudentData.pastpapers;
+        if (!items || items.length === 0) {
+          container.innerHTML = `<p class="text-xs text-[#64748B] text-center py-6 bg-white rounded-xl border border-[#E2E8F0]">No pastpapers found.</p>`;
+          return;
+        }
+        container.innerHTML = items
+          .map((i) => {
+            const status = (i.status || "missing").toLowerCase();
+            const badgeClass =
+              status === "submitted"
+                ? "bg-emerald-100 text-emerald-800"
+                : status === "late"
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-rose-100 text-rose-800";
+            return `
+          <div class="bg-white border border-[#E2E8F0] p-4 rounded-xl flex items-center justify-between shadow-sm">
+            <div>
+              <h4 class="text-xs font-bold text-[#0F172A]">${i.pastpaper_title}</h4>
+              <p class="text-[11px] text-[#64748B] mt-0.5">${i.month} ${i.year}</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-lg text-xs font-semibold uppercase ${badgeClass}">
+              ${i.status}
+            </span>
+          </div>
+        `;
+          })
+          .join("");
+      }
+    </script>
+  </body>
+</html>

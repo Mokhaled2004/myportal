@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "chart.js": "^4.5.1",
+    "dotenv": "^17.4.2",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
+    "multer": "^2.3.0",
+    "pg": "^8.23.0"
+  }
+}

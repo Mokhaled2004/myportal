@@ -1,0 +1,572 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manage Files — Portal Administration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-[#F8FAFC] text-[#0F172A] font-sans min-h-screen flex">
+    <!-- Sidebar Container -->
+    <aside
+      id="sidebarContainer"
+      class="hidden md:flex flex-col shrink-0 h-screen sticky top-0"
+    ></aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto">    <!-- Mobile burger button (shown only on mobile) -->
+    <div class="md:hidden sticky top-0 z-30 bg-white border-b border-[#E2E8F0] px-4 py-3 flex items-center gap-3 shadow-sm">
+      <button
+        onclick="if(typeof openMobileSidebar==='function')openMobileSidebar();"
+        class="p-2 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[#0F172A] hover:bg-slate-100 transition-colors flex-shrink-0"
+        aria-label="Open menu"
+      >
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <span class="font-bold text-[#0F172A] text-base tracking-tight" style="font-family:'Urbanist',sans-serif;">MyPortal</span>
+    </div>      <div class="p-6 md:p-10">
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6"
+      >
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-[#0F172A]">
+            Manage Files & PDFs
+          </h1>
+          <p class="text-sm text-[#64748B]">
+            Add course PDF links, descriptions, and link them to multiple
+            chapters.
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button
+            onclick="openAddModal()"
+            class="px-4 py-2.5 bg-[#0D9488] hover:bg-[#059669] text-white font-semibold rounded-xl text-sm transition-all shadow-sm flex items-center gap-2"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Add New File Link
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters Bar -->
+      <div
+        class="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-sm mb-6 flex flex-col sm:flex-row items-center justify-between gap-4"
+      >
+        <div class="relative w-full sm:w-80">
+          <svg
+            class="absolute left-3.5 top-3 w-4 h-4 text-[#64748B]"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          <input
+            type="text"
+            id="searchInput"
+            oninput="filterFiles()"
+            placeholder="Search by title or description..."
+            class="w-full pl-10 pr-4 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488] text-[#0F172A]"
+          />
+        </div>
+      </div>
+
+      <!-- Files Table Card -->
+      <div
+        class="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm overflow-hidden"
+      >
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr
+              class="bg-[#F8FAFC] border-b border-[#E2E8F0] text-xs font-bold text-[#64748B] uppercase tracking-wider"
+            >
+              <th class="py-4 px-6">File Title</th>
+              <th class="py-4 px-6">Description</th>
+              <th class="py-4 px-6">Chapters</th>
+              <th class="py-4 px-6">File Link</th>
+              <th class="py-4 px-6 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="filesTableBody" class="divide-y divide-[#E2E8F0] text-sm">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+    </main>
+
+    <!-- Add / Edit File Modal -->
+    <div
+      id="fileModal"
+      class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4"
+    >
+      <div
+        class="bg-white rounded-2xl p-6 sm:p-8 max-w-lg w-full shadow-xl border border-[#E2E8F0] max-h-[90vh] overflow-y-auto"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <h2 id="modalTitle" class="text-lg font-bold text-[#0F172A]">
+            Add New File Link
+          </h2>
+          <button
+            onclick="closeModal()"
+            class="text-[#64748B] hover:text-[#0F172A]"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <form
+          id="fileForm"
+          onsubmit="handleFormSubmit(event)"
+          class="space-y-4"
+        >
+          <input type="hidden" id="fileId" />
+          <div>
+            <label
+              class="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5"
+              >File Title</label
+            >
+            <input
+              type="text"
+              id="fileTitleInput"
+              required
+              placeholder="e.g. Chapter 1 Notes - Algebra & Functions"
+              class="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488]"
+            />
+          </div>
+          <div>
+            <label
+              class="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5"
+              >Description</label
+            >
+            <textarea
+              id="fileDescInput"
+              rows="3"
+              placeholder="Brief description of the PDF contents..."
+              class="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488]"
+            ></textarea>
+          </div>
+          <div>
+            <label
+              class="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5"
+              >File Link URL</label
+            >
+            <input
+              type="url"
+              id="fileUrlInput"
+              required
+              placeholder="https://example.com/document.pdf"
+              class="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488]"
+            />
+          </div>
+          <div>
+            <label
+              class="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5"
+              >Associated Chapters (Select one or more)</label
+            >
+            <div
+              id="chaptersCheckboxContainer"
+              class="max-h-40 overflow-y-auto border border-[#E2E8F0] rounded-xl p-3 space-y-2 bg-[#F8FAFC]"
+            >
+              <!-- Populated by JS -->
+            </div>
+          </div>
+          <div class="flex items-center justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onclick="closeModal()"
+              class="px-4 py-2 text-sm font-semibold text-[#64748B] hover:bg-slate-100 rounded-xl transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              id="saveBtn"
+              class="px-5 py-2.5 bg-[#0D9488] hover:bg-[#059669] text-white text-sm font-semibold rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 min-w-[110px]"
+            >
+              <span id="saveBtnText">Save File</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Custom Delete Confirmation Modal -->
+    <div
+      id="deleteModal"
+      class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4"
+    >
+      <div
+        class="bg-white rounded-2xl p-6 sm:p-8 max-w-sm w-full shadow-xl border border-[#E2E8F0] text-center"
+      >
+        <div
+          class="w-12 h-12 bg-[#FEF2F2] text-[#B91C1C] rounded-full flex items-center justify-center mx-auto mb-4"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+        </div>
+        <h2 class="text-lg font-bold text-[#0F172A] mb-2">Delete File</h2>
+        <p class="text-sm text-[#64748B] mb-6">
+          Are you sure you want to delete this file? This action cannot be
+          undone.
+        </p>
+        <input type="hidden" id="deleteFileId" />
+        <div class="flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onclick="closeDeleteModal()"
+            class="flex-1 px-4 py-2.5 text-sm font-semibold text-[#64748B] hover:bg-slate-100 rounded-xl transition-colors border border-[#E2E8F0]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            id="confirmDeleteBtn"
+            onclick="confirmDeleteFile()"
+            class="flex-1 px-4 py-2.5 bg-[#B91C1C] hover:bg-[#991B1B] text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let allFiles = [];
+      let allChapters = [];
+
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (!user.full_name || !user.is_admin) {
+        window.location.href = "index.html";
+      } else {
+        init();
+      }
+
+      // Load Sidebar component dynamically
+      fetch("adminsidebar.html")
+        .then((res) => res.text())
+        .then((html) => {
+          const container = document.getElementById("sidebarContainer");
+          container.innerHTML = html;
+          const scripts = container.querySelectorAll("script");
+          scripts.forEach((script) => {
+            const newScript = document.createElement("script");
+            newScript.textContent = script.textContent;
+            document.body.appendChild(newScript);
+          });
+          if (typeof renderSidebar === "function") {
+            renderSidebar("Manage Chapters");
+          }
+        });
+
+      async function init() {
+        const tbody = document.getElementById("filesTableBody");
+        if (tbody) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" class="py-12 text-center">
+                <div class="flex flex-col items-center justify-center gap-3">
+                  <div class="w-8 h-8 border-4 border-[#0D9488] border-t-transparent rounded-full animate-spin"></div>
+                  <p class="text-sm font-medium text-[#64748B]">Loading files...</p>
+                </div>
+              </td>
+            </tr>
+          `;
+        }
+
+        await Promise.all([fetchChapters(), fetchFiles()]);
+      }
+
+      async function fetchChapters() {
+        try {
+          const res = await fetch("/api/chapters");
+          allChapters = await res.json();
+          renderChapterCheckboxes();
+        } catch (err) {
+          console.error("Failed to load chapters", err);
+        }
+      }
+
+      function renderChapterCheckboxes(selectedChapterIds = []) {
+        const container = document.getElementById("chaptersCheckboxContainer");
+        if (!container) return;
+        container.innerHTML = "";
+
+        if (allChapters.length === 0) {
+          container.innerHTML = `<p class="text-xs text-[#64748B]">No chapters available. Please add chapters first.</p>`;
+          return;
+        }
+
+        allChapters.forEach((c) => {
+          const isChecked = selectedChapterIds.includes(c.id) ? "checked" : "";
+          container.innerHTML += `
+            <label class="flex items-center gap-2.5 text-sm text-[#0F172A] cursor-pointer">
+              <input type="checkbox" name="chapter_ids" value="${c.id}" ${isChecked} class="w-4 h-4 text-[#0D9488] border-[#E2E8F0] rounded focus:ring-[#0D9488]" />
+              <span>${c.title}</span>
+            </label>
+          `;
+        });
+      }
+
+      async function fetchFiles() {
+        try {
+          const res = await fetch("/api/files");
+          allFiles = await res.json();
+          filterFiles();
+        } catch (err) {
+          console.error("Failed to load files", err);
+          const tbody = document.getElementById("filesTableBody");
+          if (tbody) {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="5" class="p-8 text-center text-[#B91C1C]">Failed to load files. Please try again.</td>
+              </tr>
+            `;
+          }
+        }
+      }
+
+      function filterFiles() {
+        const query = document
+          .getElementById("searchInput")
+          .value.toLowerCase();
+
+        let filtered = allFiles.filter(
+          (f) =>
+            f.title.toLowerCase().includes(query) ||
+            (f.description && f.description.toLowerCase().includes(query)),
+        );
+
+        renderTable(filtered);
+      }
+
+      function renderTable(files) {
+        const tbody = document.getElementById("filesTableBody");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+
+        if (files.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" class="p-8 text-center text-[#64748B]">No files found.</td>
+            </tr>
+          `;
+          return;
+        }
+
+        files.forEach((f) => {
+          const chaptersBadges =
+            f.chapters && f.chapters.length > 0
+              ? f.chapters
+                  .map(
+                    (c) =>
+                      `<span class="px-2 py-0.5 text-xs font-semibold bg-[#ECFDF5] text-[#047857] rounded-full inline-block mr-1 mb-1">${c.title}</span>`,
+                  )
+                  .join("")
+              : '<span class="text-xs text-[#64748B]">No chapters</span>';
+
+          tbody.innerHTML += `
+            <tr class="hover:bg-slate-50/80 transition-colors">
+              <td class="py-4 px-6 font-semibold text-[#0F172A]">${f.title}</td>
+              <td class="py-4 px-6 text-xs text-[#64748B] max-w-xs truncate">${f.description || "—"}</td>
+              <td class="py-4 px-6">${chaptersBadges}</td>
+              <td class="py-4 px-6">
+                <a href="${f.file_path}" target="_blank" class="text-xs text-[#0D9488] hover:underline truncate max-w-[180px] block font-medium">${f.file_path}</a>
+              </td>
+              <td class="py-4 px-6 text-right space-x-2">
+                <button
+                  onclick='openEditModal(${JSON.stringify(f).replace(/'/g, "&#39;")})'
+                  class="p-1.5 text-[#64748B] hover:text-[#0D9488] hover:bg-slate-100 rounded-lg transition-colors"
+                  title="Edit"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
+                </button>
+                <button
+                  onclick="openDeleteModal(${f.id})"
+                  class="p-1.5 text-[#64748B] hover:text-[#B91C1C] hover:bg-[#FEF2F2] rounded-lg transition-colors"
+                  title="Delete"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+      }
+
+      function openAddModal() {
+        document.getElementById("modalTitle").textContent = "Add New File Link";
+        document.getElementById("fileId").value = "";
+        document.getElementById("fileTitleInput").value = "";
+        document.getElementById("fileDescInput").value = "";
+        document.getElementById("fileUrlInput").value = "";
+        renderChapterCheckboxes([]);
+        document.getElementById("fileModal").classList.remove("hidden");
+        document.getElementById("fileModal").classList.add("flex");
+      }
+
+      function openEditModal(file) {
+        document.getElementById("modalTitle").textContent = "Edit File Link";
+        document.getElementById("fileId").value = file.id;
+        document.getElementById("fileTitleInput").value = file.title;
+        document.getElementById("fileDescInput").value = file.description || "";
+        document.getElementById("fileUrlInput").value = file.file_path || "";
+
+        const selectedChapterIds = file.chapters
+          ? file.chapters.map((c) => c.id)
+          : [];
+        renderChapterCheckboxes(selectedChapterIds);
+
+        document.getElementById("fileModal").classList.remove("hidden");
+        document.getElementById("fileModal").classList.add("flex");
+      }
+
+      function closeModal() {
+        document.getElementById("fileModal").classList.remove("flex");
+        document.getElementById("fileModal").classList.add("hidden");
+      }
+
+      function openDeleteModal(id) {
+        document.getElementById("deleteFileId").value = id;
+        document.getElementById("deleteModal").classList.remove("hidden");
+        document.getElementById("deleteModal").classList.add("flex");
+      }
+
+      function closeDeleteModal() {
+        document.getElementById("deleteModal").classList.remove("flex");
+        document.getElementById("deleteModal").classList.add("hidden");
+      }
+
+      async function confirmDeleteFile() {
+        const id = document.getElementById("deleteFileId").value;
+        if (!id) return;
+
+        const confirmBtn = document.getElementById("confirmDeleteBtn");
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Deleting...";
+
+        try {
+          const res = await fetch(`/api/files?id=${id}`, {
+            method: "DELETE",
+          });
+
+          if (res.ok) {
+            closeDeleteModal();
+            fetchFiles();
+          } else {
+            alert("Failed to delete file.");
+          }
+        } catch (err) {
+          console.error("Error deleting file:", err);
+          alert("An error occurred.");
+        } finally {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Delete";
+        }
+      }
+
+      async function handleFormSubmit(event) {
+        event.preventDefault();
+        const id = document.getElementById("fileId").value;
+        const title = document.getElementById("fileTitleInput").value;
+        const description = document.getElementById("fileDescInput").value;
+        const file_path = document.getElementById("fileUrlInput").value;
+
+        const checkedBoxes = document.querySelectorAll(
+          'input[name="chapter_ids"]:checked',
+        );
+        const chapter_ids = Array.from(checkedBoxes).map((cb) =>
+          parseInt(cb.value),
+        );
+
+        const saveBtn = document.getElementById("saveBtn");
+        const saveBtnText = document.getElementById("saveBtnText");
+
+        saveBtn.disabled = true;
+        saveBtnText.innerHTML = `
+          <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Saving...
+        `;
+
+        const method = id ? "PUT" : "POST";
+        const payload = {
+          id: id ? parseInt(id) : undefined,
+          title,
+          description,
+          file_path,
+          chapter_ids,
+        };
+
+        try {
+          const res = await fetch("/api/files", {
+            method: method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (res.ok) {
+            closeModal();
+            fetchFiles();
+          } else {
+            const errData = await res.json();
+            alert("Failed to save file: " + (errData.error || "Unknown error"));
+          }
+        } catch (err) {
+          console.error("Error saving file:", err);
+          alert("An error occurred.");
+        } finally {
+          saveBtn.disabled = false;
+          saveBtnText.textContent = "Save File";
+        }
+      }
+    </script>
+  </body>
+</html>

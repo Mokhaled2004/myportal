@@ -1,0 +1,403 @@
+﻿<!-- adminschools.html -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manage Schools — Admin Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  </head>
+  <body class="bg-[#F8FAFC] text-[#0F172A] font-sans min-h-screen flex">
+    <!-- Sidebar Container -->
+    <aside
+      id="sidebarContainer"
+      class="hidden md:flex flex-col shrink-0 h-screen sticky top-0"
+    ></aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto">    <!-- Mobile burger button (shown only on mobile) -->
+    <div class="md:hidden sticky top-0 z-30 bg-white border-b border-[#E2E8F0] px-4 py-3 flex items-center gap-3 shadow-sm">
+      <button
+        onclick="if(typeof openMobileSidebar==='function')openMobileSidebar();"
+        class="p-2 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[#0F172A] hover:bg-slate-100 transition-colors flex-shrink-0"
+        aria-label="Open menu"
+      >
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <span class="font-bold text-[#0F172A] text-base tracking-tight" style="font-family:'Urbanist',sans-serif;">MyPortal</span>
+    </div>      <div class="p-6 md:p-10">
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6"
+      >
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-[#0F172A]">
+            Manage Schools
+          </h1>
+          <p class="text-sm text-[#64748B]">
+            Add new schools and view existing school entities in the system.
+          </p>
+        </div>
+        <button
+          onclick="openAddModal()"
+          class="px-4 py-2.5 bg-[#0D9488] hover:bg-[#0b7a6e] text-white rounded-xl text-sm font-semibold shadow-sm transition-all flex items-center gap-2"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          <span>Add School</span>
+        </button>
+      </div>
+
+      <!-- Schools Table View -->
+      <div
+        class="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm overflow-hidden"
+      >
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr
+                class="border-b border-[#E2E8F0] bg-[#F8FAFC] text-xs font-semibold text-[#64748B] uppercase tracking-wider"
+              >
+                <th class="p-4">ID</th>
+                <th class="p-4">School Name</th>
+                <th class="p-4">Created At</th>
+                <th class="p-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody
+              id="schoolsTableBody"
+              class="divide-y divide-[#E2E8F0] text-sm"
+            >
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    </main>
+
+    <!-- Create School Modal -->
+    <div
+      id="schoolModal"
+      class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-white border border-[#E2E8F0] rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4"
+      >
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-bold text-[#0F172A]">Add New School</h3>
+          <button
+            onclick="closeModal()"
+            class="text-[#64748B] hover:text-[#0F172A]"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <form
+          id="schoolForm"
+          onsubmit="handleSchoolSubmit(event)"
+          class="space-y-4"
+        >
+          <div>
+            <label
+              class="block text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-1.5"
+              >School Name</label
+            >
+            <input
+              type="text"
+              id="schoolNameInput"
+              required
+              placeholder="e.g. Lincoln High School"
+              class="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488] text-[#0F172A]"
+            />
+          </div>
+          <div
+            class="flex items-center justify-end gap-3 pt-4 border-t border-[#E2E8F0]"
+          >
+            <button
+              type="button"
+              onclick="closeModal()"
+              class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              id="createSchoolBtn"
+              class="px-4 py-2 bg-[#0D9488] hover:bg-[#0b7a6e] text-white rounded-xl text-sm font-semibold shadow-sm transition-all"
+            >
+              Save School
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Custom Delete Confirmation Modal -->
+    <div
+      id="deleteModal"
+      class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4"
+    >
+      <div
+        class="bg-white rounded-2xl p-6 sm:p-8 max-w-sm w-full shadow-xl border border-[#E2E8F0] text-center"
+      >
+        <div
+          class="w-12 h-12 bg-[#FEF2F2] text-[#B91C1C] rounded-full flex items-center justify-center mx-auto mb-4"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+        </div>
+        <h2 class="text-lg font-bold text-[#0F172A] mb-2">Delete School</h2>
+        <p class="text-sm text-[#64748B] mb-6">
+          Are you sure you want to delete this school entry?
+        </p>
+        <input type="hidden" id="deleteSchoolId" />
+        <div class="flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onclick="closeDeleteModal()"
+            class="flex-1 px-4 py-2.5 text-sm font-semibold text-[#64748B] hover:bg-slate-100 rounded-xl transition-colors border border-[#E2E8F0]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            id="confirmDeleteBtn"
+            onclick="confirmDeleteSchool()"
+            class="flex-1 px-4 py-2.5 bg-[#B91C1C] hover:bg-[#991B1B] text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inline Status Toast -->
+    <div
+      id="statusToast"
+      class="fixed bottom-5 right-5 z-50 hidden px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white transition-all transform duration-300"
+    ></div>
+
+    <script>
+      let allSchools = [];
+
+      // Auth Check
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (!user.full_name) {
+        window.location.href = "index.html";
+      } else {
+        init();
+      }
+
+      // Load Sidebar component dynamically
+      fetch("adminsidebar.html")
+        .then((res) => res.text())
+        .then((html) => {
+          const container = document.getElementById("sidebarContainer");
+          container.innerHTML = html;
+          const scripts = container.querySelectorAll("script");
+          scripts.forEach((script) => {
+            const newScript = document.createElement("script");
+            newScript.textContent = script.textContent;
+            document.body.appendChild(newScript);
+          });
+          if (typeof renderSidebar === "function") {
+            renderSidebar("Manage Schools");
+          }
+        });
+
+      async function init() {
+        await fetchSchools();
+      }
+
+      async function fetchSchools() {
+        const tbody = document.getElementById("schoolsTableBody");
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" class="p-8 text-center text-sm text-[#64748B]">
+              <div class="flex flex-col items-center justify-center gap-3">
+                <div class="w-6 h-6 border-4 border-[#0D9488] border-t-transparent rounded-full animate-spin"></div>
+                Loading schools...
+              </div>
+            </td>
+          </tr>
+        `;
+
+        try {
+          const res = await fetch("/api/schools");
+          allSchools = await res.json();
+          renderSchoolsTable(allSchools);
+        } catch (err) {
+          console.error("Failed to load schools", err);
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="4" class="p-8 text-center text-sm text-[#B91C1C]">
+                Failed to load schools. Please refresh the page.
+              </td>
+            </tr>
+          `;
+        }
+      }
+
+      function renderSchoolsTable(schools) {
+        const tbody = document.getElementById("schoolsTableBody");
+
+        if (!schools || schools.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="4" class="p-8 text-center text-sm text-[#64748B]">
+                No schools found. Add your first school above.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = schools
+          .map((school) => {
+            const formattedDate = school.created_at
+              ? new Date(school.created_at).toLocaleDateString(undefined, {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })
+              : "N/A";
+
+            return `
+            <tr class="hover:bg-slate-50/50 transition-colors">
+              <td class="p-4 font-mono text-xs text-[#64748B]">#${school.id}</td>
+              <td class="p-4 font-semibold text-[#0F172A]">${school.school_name}</td>
+              <td class="p-4 text-[#64748B]">${formattedDate}</td>
+              <td class="p-4 text-center">
+                <button onclick="openDeleteModal(${school.id})" class="p-2 text-[#64748B] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </td>
+            </tr>
+          `;
+          })
+          .join("");
+      }
+
+      function openAddModal() {
+        document.getElementById("schoolNameInput").value = "";
+        document.getElementById("schoolModal").classList.remove("hidden");
+      }
+
+      function closeModal() {
+        document.getElementById("schoolModal").classList.add("hidden");
+      }
+
+      async function handleSchoolSubmit(event) {
+        event.preventDefault();
+        const btn = document.getElementById("createSchoolBtn");
+        btn.disabled = true;
+        btn.textContent = "Saving...";
+
+        const school_name = document.getElementById("schoolNameInput").value;
+
+        try {
+          const res = await fetch("/api/schools", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ school_name }),
+          });
+
+          if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.error || "Failed to create school");
+          }
+
+          closeModal();
+          await fetchSchools();
+          showToast("School added successfully.", "success");
+        } catch (err) {
+          console.error(err);
+          showToast(err.message || "Error adding school", "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Save School";
+        }
+      }
+
+      function openDeleteModal(id) {
+        document.getElementById("deleteSchoolId").value = id;
+        document.getElementById("deleteModal").classList.remove("hidden");
+        document.getElementById("deleteModal").classList.add("flex");
+      }
+
+      function closeDeleteModal() {
+        document.getElementById("deleteModal").classList.remove("flex");
+        document.getElementById("deleteModal").classList.add("hidden");
+      }
+
+      async function confirmDeleteSchool() {
+        const id = document.getElementById("deleteSchoolId").value;
+        if (!id) return;
+
+        try {
+          const res = await fetch(`/api/schools?id=${id}`, {
+            method: "DELETE",
+          });
+          if (!res.ok) throw new Error("Failed to delete school");
+
+          closeDeleteModal();
+          await fetchSchools();
+          showToast("School deleted successfully.", "success");
+        } catch (err) {
+          console.error(err);
+          showToast("Error deleting school", "error");
+        }
+      }
+
+      function showToast(message, type = "success") {
+        const toast = document.getElementById("statusToast");
+        toast.textContent = message;
+        toast.className = `fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white transition-all transform duration-300 ${
+          type === "success" ? "bg-[#0D9488]" : "bg-[#B91C1C]"
+        }`;
+        toast.classList.remove("hidden");
+        setTimeout(() => {
+          toast.classList.add("hidden");
+        }, 3000);
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,600 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manage Attendance — Admin Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  </head>
+  <body class="bg-[#F8FAFC] text-[#0F172A] font-sans min-h-screen flex">
+    <!-- Sidebar Container -->
+    <aside
+      id="sidebarContainer"
+      class="hidden md:flex flex-col shrink-0 h-screen sticky top-0"
+    ></aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto">    <!-- Mobile burger button (shown only on mobile) -->
+    <div class="md:hidden sticky top-0 z-30 bg-white border-b border-[#E2E8F0] px-4 py-3 flex items-center gap-3 shadow-sm">
+      <button
+        onclick="if(typeof openMobileSidebar==='function')openMobileSidebar();"
+        class="p-2 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[#0F172A] hover:bg-slate-100 transition-colors flex-shrink-0"
+        aria-label="Open menu"
+      >
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <span class="font-bold text-[#0F172A] text-base tracking-tight" style="font-family:'Urbanist',sans-serif;">MyPortal</span>
+    </div>      <div class="p-6 md:p-10">
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6"
+      >
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-[#0F172A]">
+            Manage Attendance
+          </h1>
+          <p class="text-sm text-[#64748B]">
+            Create attendance sessions, view student rosters, and mark
+            attendance status.
+          </p>
+        </div>
+        <button
+          onclick="openAddModal()"
+          class="px-4 py-2.5 bg-[#0D9488] hover:bg-[#0b7a6e] text-white rounded-xl text-sm font-semibold shadow-sm transition-all flex items-center gap-2"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          <span>Create Session</span>
+        </button>
+      </div>
+
+      <!-- Sessions Grid / List View -->
+      <div id="sessionsContainer" class="space-y-4">
+        <!-- Populated dynamically by JS -->
+      </div>
+
+      <!-- Session Attendance Sheet View (Hidden by default) -->
+      <div id="attendanceSheetView" class="hidden space-y-6">
+        <div
+          class="flex items-center justify-between bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-6 shadow-sm"
+        >
+          <div>
+            <button
+              onclick="backToSessions()"
+              class="text-xs font-semibold text-[#0D9488] hover:underline mb-1 flex items-center gap-1"
+            >
+              &larr; Back to Sessions
+            </button>
+            <h2 id="sheetTitle" class="text-xl font-bold text-[#0F172A]">
+              Session Attendance
+            </h2>
+            <p id="sheetDate" class="text-sm text-[#64748B]"></p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button
+              onclick="markAll('present')"
+              class="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl text-xs font-semibold transition-colors"
+            >
+              Mark All Present
+            </button>
+            <button
+              onclick="markAll('absent')"
+              class="px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-xl text-xs font-semibold transition-colors"
+            >
+              Mark All Absent
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm overflow-hidden"
+        >
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr
+                  class="border-b border-[#E2E8F0] bg-[#F8FAFC] text-xs font-semibold text-[#64748B] uppercase tracking-wider"
+                >
+                  <th class="p-4">Student Name</th>
+                  <th class="p-4">School Name</th>
+                  <th class="p-4 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody
+                id="studentAttendanceTableBody"
+                class="divide-y divide-[#E2E8F0] text-sm"
+              >
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    </main>
+
+    <!-- Create Session Modal -->
+    <div
+      id="sessionModal"
+      class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-white border border-[#E2E8F0] rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4"
+      >
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-bold text-[#0F172A]">
+            Create Attendance Session
+          </h3>
+          <button
+            onclick="closeModal()"
+            class="text-[#64748B] hover:text-[#0F172A]"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <form
+          id="sessionForm"
+          onsubmit="handleSessionSubmit(event)"
+          class="space-y-4"
+        >
+          <div>
+            <label
+              class="block text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-1.5"
+              >Session Title / Topic</label
+            >
+            <input
+              type="text"
+              id="sessionTitleInput"
+              required
+              placeholder="e.g. Lecture 04 - Calculus"
+              class="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488] text-[#0F172A]"
+            />
+          </div>
+          <div>
+            <label
+              class="block text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-1.5"
+              >Date</label
+            >
+            <input
+              type="date"
+              id="sessionDateInput"
+              required
+              class="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-none focus:border-[#0D9488] text-[#0F172A]"
+            />
+          </div>
+          <div
+            class="flex items-center justify-end gap-3 pt-4 border-t border-[#E2E8F0]"
+          >
+            <button
+              type="button"
+              onclick="closeModal()"
+              class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              id="createSessionBtn"
+              class="px-4 py-2 bg-[#0D9488] hover:bg-[#0b7a6e] text-white rounded-xl text-sm font-semibold shadow-sm transition-all"
+            >
+              Create
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Custom Delete Confirmation Modal -->
+    <div
+      id="deleteModal"
+      class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4"
+    >
+      <div
+        class="bg-white rounded-2xl p-6 sm:p-8 max-w-sm w-full shadow-xl border border-[#E2E8F0] text-center"
+      >
+        <div
+          class="w-12 h-12 bg-[#FEF2F2] text-[#B91C1C] rounded-full flex items-center justify-center mx-auto mb-4"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+        </div>
+        <h2 class="text-lg font-bold text-[#0F172A] mb-2">Delete Session</h2>
+        <p class="text-sm text-[#64748B] mb-6">
+          Are you sure you want to delete this session and its attendance
+          records?
+        </p>
+        <input type="hidden" id="deleteSessionId" />
+        <div class="flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onclick="closeDeleteModal()"
+            class="flex-1 px-4 py-2.5 text-sm font-semibold text-[#64748B] hover:bg-slate-100 rounded-xl transition-colors border border-[#E2E8F0]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            id="confirmDeleteBtn"
+            onclick="confirmDeleteSession()"
+            class="flex-1 px-4 py-2.5 bg-[#B91C1C] hover:bg-[#991B1B] text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inline Status Toast -->
+    <div
+      id="statusToast"
+      class="fixed bottom-5 right-5 z-50 hidden px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white transition-all transform duration-300"
+    ></div>
+
+    <script>
+      let allSessions = [];
+      let currentActiveSessionId = null;
+      let currentStudentsAttendance = [];
+
+      // Auth Check
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (!user.full_name) {
+        window.location.href = "index.html";
+      } else {
+        init();
+      }
+
+      // Load Sidebar component dynamically
+      fetch("adminsidebar.html")
+        .then((res) => res.text())
+        .then((html) => {
+          const container = document.getElementById("sidebarContainer");
+          container.innerHTML = html;
+          const scripts = container.querySelectorAll("script");
+          scripts.forEach((script) => {
+            const newScript = document.createElement("script");
+            newScript.textContent = script.textContent;
+            document.body.appendChild(newScript);
+          });
+          if (typeof renderSidebar === "function") {
+            renderSidebar("Attendance");
+          }
+        });
+
+      async function init() {
+        await fetchSessions();
+      }
+
+      async function fetchSessions() {
+        const container = document.getElementById("sessionsContainer");
+        container.innerHTML = `
+          <div class="py-20 flex flex-col items-center justify-center gap-3">
+            <div class="w-8 h-8 border-4 border-[#0D9488] border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-sm font-medium text-[#64748B]">Loading sessions...</p>
+          </div>
+        `;
+
+        try {
+          const res = await fetch("/api/attendance");
+          allSessions = await res.json();
+          renderSessions(allSessions);
+        } catch (err) {
+          console.error("Failed to load sessions", err);
+          container.innerHTML = `
+            <div class="p-12 text-center bg-white border border-[#E2E8F0] rounded-2xl text-[#B91C1C]">
+              Failed to load attendance sessions. Please refresh the page.
+            </div>
+          `;
+        }
+      }
+
+      function renderSessions(sessions) {
+        const container = document.getElementById("sessionsContainer");
+
+        if (!sessions || sessions.length === 0) {
+          container.innerHTML = `
+            <div class="bg-white border border-[#E2E8F0] rounded-2xl p-12 text-center shadow-sm">
+              <p class="text-sm font-medium text-[#64748B]">No attendance sessions created yet.</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = sessions
+          .map((session) => {
+            const formattedDate = new Date(session.date).toLocaleDateString(
+              undefined,
+              {
+                weekday: "short",
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              },
+            );
+
+            return `
+            <div class="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-xl bg-teal-50 text-[#0D9488] flex items-center justify-center shrink-0">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="text-base font-bold text-[#0F172A]">${session.title || "Untitled Session"}</h3>
+                  <p class="text-xs text-[#64748B] mt-0.5">${formattedDate}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 self-end sm:self-center">
+                <button onclick="openAttendanceSheet(${session.id}, '${session.title || "Session"}', '${formattedDate}')" class="px-3.5 py-2 bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5">
+                  Manage Roster
+                </button>
+                <button onclick="openDeleteModal(${session.id})" class="p-2 text-[#64748B] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
+            </div>
+          `;
+          })
+          .join("");
+      }
+
+      async function openAttendanceSheet(sessionId, title, dateStr) {
+        currentActiveSessionId = sessionId;
+        document.getElementById("sheetTitle").innerText = title;
+        document.getElementById("sheetDate").innerText = dateStr;
+
+        document.getElementById("sessionsContainer").classList.add("hidden");
+        document
+          .getElementById("attendanceSheetView")
+          .classList.remove("hidden");
+
+        const tbody = document.getElementById("studentAttendanceTableBody");
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="3" class="p-8 text-center text-sm text-[#64748B]">Loading students roster...</td>
+          </tr>
+        `;
+
+        try {
+          const res = await fetch(
+            `/api/attendance?action=session_details&sessionId=${sessionId}`,
+          );
+          currentStudentsAttendance = await res.json();
+          renderStudentTable();
+        } catch (err) {
+          console.error(err);
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="3" class="p-8 text-center text-sm text-red-600">Failed to load student attendance roster.</td>
+            </tr>
+          `;
+        }
+      }
+
+      function renderStudentTable() {
+        const tbody = document.getElementById("studentAttendanceTableBody");
+        if (
+          !currentStudentsAttendance ||
+          currentStudentsAttendance.length === 0
+        ) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="3" class="p-8 text-center text-sm text-[#64748B]">No registered students found in system.</td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = currentStudentsAttendance
+          .map((student, index) => {
+            let selectBg = "bg-slate-100 text-slate-700 border-[#E2E8F0]";
+            if (student.status === "present")
+              selectBg = "bg-emerald-50 text-emerald-700 border-emerald-200";
+            else if (student.status === "late")
+              selectBg = "bg-amber-50 text-amber-700 border-amber-200";
+            else if (student.status === "absent")
+              selectBg = "bg-red-50 text-red-700 border-red-200";
+            else if (student.status === "excused")
+              selectBg = "bg-blue-50 text-blue-700 border-blue-200";
+
+            return `
+            <tr class="hover:bg-slate-50/50">
+              <td class="p-4 font-semibold text-[#0F172A]">${student.full_name}</td>
+              <td class="p-4 text-[#64748B]">${student.school_name || "N/A"}</td>
+              <td class="p-4 text-center">
+                <select onchange="setStudentStatus(${index}, this.value)" class="px-3 py-1.5 rounded-xl text-xs font-bold border focus:outline-none focus:border-[#0D9488] transition-colors cursor-pointer ${selectBg}">
+                  <option value="present" ${student.status === "present" ? "selected" : ""}>Present</option>
+                  <option value="late" ${student.status === "late" ? "selected" : ""}>Late</option>
+                  <option value="absent" ${student.status === "absent" ? "selected" : ""}>Absent</option>
+                  <option value="excused" ${student.status === "excused" ? "selected" : ""}>Excused</option>
+                </select>
+              </td>
+            </tr>
+          `;
+          })
+          .join("");
+      }
+
+      async function setStudentStatus(index, status) {
+        const student = currentStudentsAttendance[index];
+        if (student.status === status) return;
+
+        student.status = status;
+        renderStudentTable();
+
+        try {
+          const res = await fetch("/api/attendance?action=mark", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId: currentActiveSessionId,
+              records: [{ studentId: student.id, status: status }],
+            }),
+          });
+
+          if (!res.ok) throw new Error("Failed to auto-save attendance");
+          showToast(`Saved ${student.full_name}`, "success");
+        } catch (err) {
+          console.error(err);
+          showToast("Error saving attendance", "error");
+        }
+      }
+
+      async function markAll(status) {
+        currentStudentsAttendance.forEach((student) => {
+          student.status = status;
+        });
+        renderStudentTable();
+
+        const records = currentStudentsAttendance.map((s) => ({
+          studentId: s.id,
+          status: s.status,
+        }));
+
+        try {
+          const res = await fetch("/api/attendance?action=mark", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId: currentActiveSessionId,
+              records,
+            }),
+          });
+
+          if (!res.ok) throw new Error("Failed to save attendance");
+          showToast(`Marked all as ${status}`, "success");
+        } catch (err) {
+          console.error(err);
+          showToast("Error saving attendance", "error");
+        }
+      }
+
+      function backToSessions() {
+        currentActiveSessionId = null;
+        document.getElementById("attendanceSheetView").classList.add("hidden");
+        document.getElementById("sessionsContainer").classList.remove("hidden");
+      }
+
+      function openAddModal() {
+        document.getElementById("sessionTitleInput").value = "";
+        document.getElementById("sessionDateInput").value = new Date()
+          .toISOString()
+          .split("T")[0];
+        document.getElementById("sessionModal").classList.remove("hidden");
+      }
+
+      function closeModal() {
+        document.getElementById("sessionModal").classList.add("hidden");
+      }
+
+      async function handleSessionSubmit(event) {
+        event.preventDefault();
+        const btn = document.getElementById("createSessionBtn");
+        btn.disabled = true;
+        btn.textContent = "Creating...";
+
+        const title = document.getElementById("sessionTitleInput").value;
+        const date = document.getElementById("sessionDateInput").value;
+
+        try {
+          const res = await fetch("/api/attendance", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, date }),
+          });
+
+          if (!res.ok) throw new Error("Failed to create session");
+
+          closeModal();
+          await fetchSessions();
+          showToast("Session created successfully.", "success");
+        } catch (err) {
+          console.error(err);
+          showToast("Error creating session", "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Create";
+        }
+      }
+
+      function openDeleteModal(id) {
+        document.getElementById("deleteSessionId").value = id;
+        document.getElementById("deleteModal").classList.remove("hidden");
+        document.getElementById("deleteModal").classList.add("flex");
+      }
+
+      function closeDeleteModal() {
+        document.getElementById("deleteModal").classList.remove("flex");
+        document.getElementById("deleteModal").classList.add("hidden");
+      }
+
+      async function confirmDeleteSession() {
+        const id = document.getElementById("deleteSessionId").value;
+        if (!id) return;
+
+        try {
+          const res = await fetch(`/api/attendance?id=${id}`, {
+            method: "DELETE",
+          });
+          if (!res.ok) throw new Error("Failed to delete session");
+
+          closeDeleteModal();
+          await fetchSessions();
+          showToast("Session deleted successfully.", "success");
+        } catch (err) {
+          console.error(err);
+          showToast("Error deleting session", "error");
+        }
+      }
+
+      function showToast(message, type = "success") {
+        const toast = document.getElementById("statusToast");
+        toast.textContent = message;
+        toast.className = `fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white transition-all transform duration-300 ${
+          type === "success" ? "bg-[#0D9488]" : "bg-[#B91C1C]"
+        }`;
+        toast.classList.remove("hidden");
+        setTimeout(() => {
+          toast.classList.add("hidden");
+        }, 3000);
+      }
+    </script>
+  </body>
+</html>
