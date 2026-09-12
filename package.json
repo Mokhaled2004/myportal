@@ -4,7 +4,7 @@
   "private": true,
   "description": "Educational management portal with serverless API functions",
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   },
   "dependencies": {
     "chart.js": "^4.5.1",
