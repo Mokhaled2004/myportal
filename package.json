@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "description": "Educational management portal with serverless API functions",
+  "engines": {
+    "node": "20.x"
+  },
   "dependencies": {
     "chart.js": "^4.5.1",
     "dotenv": "^17.4.2",
